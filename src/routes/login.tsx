@@ -22,32 +22,32 @@ function Login() {
     <PhoneFrame>
       <form
         onSubmit={(e) => e.preventDefault()}
-        className="flex-1 flex flex-col px-7 pt-8 pb-8"
+        className="flex-1 flex flex-col px-6 pt-8 pb-8 mx-auto w-full max-w-[420px]"
       >
         <div>
           <h1 className="text-[26px] font-bold text-primary font-display">
             Welcome Back!
           </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-3 text-[13px] text-muted-foreground">
             Login to continue your journey
           </p>
         </div>
 
         <button
           type="button"
-          className="mt-7 w-full h-12 rounded-xl border border-border bg-background flex items-center justify-center gap-3 text-[14px] font-medium text-foreground hover:bg-accent transition"
+          className="mt-8 w-full h-12 rounded-xl border border-border bg-background flex items-center justify-center gap-3 text-[14px] font-medium text-foreground hover:bg-accent transition"
         >
           <GoogleIcon />
           Continue with Google
         </button>
 
-        <div className="flex items-center gap-4 my-5">
+        <div className="flex items-center gap-4 my-8">
           <span className="h-px flex-1 bg-border" />
           <span className="text-[12px] text-muted-foreground">or</span>
           <span className="h-px flex-1 bg-border" />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <AuthInput
             label="Email"
             type="email"
@@ -76,17 +76,17 @@ function Login() {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-8">
           <Checkbox checked={remember} onChange={setRemember} id="remember">
             Remember me
           </Checkbox>
         </div>
 
-        <div className="mt-7">
+        <div className="mt-8">
           <PrimaryButton type="submit">Login</PrimaryButton>
         </div>
 
-        <p className="mt-5 text-center text-[13px] text-muted-foreground">
+        <p className="mt-8 text-center text-[13px] text-muted-foreground">
           Don't have an account?{" "}
           <Link to="/signup" className="text-[var(--brand-blue)] font-medium">
             Sign up
