@@ -1,5 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./types";
+
+// Database types are generated automatically once tables exist in the
+// connected Supabase project. Until then we use a permissive type so the
+// client compiles.
+type Database = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /**
  * Browser-side Supabase client.
