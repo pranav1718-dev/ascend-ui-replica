@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
 import { Checkbox } from "@/components/auth/Checkbox";
+import { authService } from "@/services/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -16,12 +17,40 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
+  const navigate = useNavigate();
   const [remember, setRemember] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const { error: err } = await authService.signIn(email, password);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    navigate({ to: "/home" });
+  }
+
+  async function handleForgot() {
+    setError(null);
+    if (!email) {
+      setError("Enter your email first.");
+      return;
+    }
+    await authService.resetPassword(email);
+    setError("Password reset link sent to your email.");
+  }
 
   return (
     <PhoneFrame>
       <form
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={handleSubmit}
         className="flex-1 flex flex-col px-6 pt-8 pb-8 mx-auto w-full max-w-[420px]"
       >
         <div>
@@ -52,7 +81,8 @@ function Login() {
             label="Email"
             type="email"
             placeholder="pranav@example.com"
-            defaultValue="pranav@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -63,11 +93,13 @@ function Login() {
             <div className="relative">
               <input
                 type="password"
-                defaultValue="password123"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full h-12 rounded-xl border border-border bg-background px-4 pr-20 text-[15px] text-foreground focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/10 transition"
               />
               <button
                 type="button"
+                onClick={handleForgot}
                 className="absolute inset-y-0 right-3 flex items-center text-[13px] font-medium text-[var(--brand-blue)]"
               >
                 Forgot?
@@ -76,6 +108,11 @@ function Login() {
           </div>
         </div>
 
+        {error && (
+          <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>
+        )}
+
+
         <div className="mt-8">
           <Checkbox checked={remember} onChange={setRemember} id="remember">
             Remember me
@@ -83,7 +120,9 @@ function Login() {
         </div>
 
         <div className="mt-8">
-          <PrimaryButton type="submit">Login</PrimaryButton>
+          <PrimaryButton type="submit" disabled={loading}>
+            {loading ? "Logging in…" : "Login"}
+          </PrimaryButton>
         </div>
 
         <p className="mt-8 text-center text-[13px] text-muted-foreground">
