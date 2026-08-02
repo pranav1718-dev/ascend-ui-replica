@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
 import { Checkbox } from "@/components/auth/Checkbox";
+import { authService } from "@/services/auth";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -19,12 +20,40 @@ export const Route = createFileRoute("/signup")({
 });
 
 function SignUp() {
+  const navigate = useNavigate();
   const [agree, setAgree] = useState(true);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    const { user, error: err } = await authService.signUp(email, password, fullName);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    if (user) {
+      setNotice("Check your email to confirm your account, then log in.");
+    }
+  }
 
   return (
     <PhoneFrame>
       <form
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={handleSubmit}
         className="flex-1 flex flex-col px-6 pt-8 pb-8 mx-auto w-full max-w-[420px]"
       >
         <div>
@@ -40,23 +69,27 @@ function SignUp() {
           <AuthInput
             label="Full Name"
             placeholder="Pranav Gharge"
-            defaultValue="Pranav Gharge"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
           />
           <AuthInput
             label="Email"
             type="email"
             placeholder="pranav@example.com"
-            defaultValue="pranav@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <AuthInput
             label="Password"
             type="password"
-            defaultValue="password123"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
           <AuthInput
             label="Confirm Password"
             type="password"
-            defaultValue="password123"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
           />
         </div>
 
@@ -69,9 +102,12 @@ function SignUp() {
           </Checkbox>
         </div>
 
+        {error && <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>}
+        {notice && <p className="mt-4 text-[12.5px] text-emerald-600">{notice}</p>}
+
         <div className="mt-8">
-          <PrimaryButton type="submit" disabled={!agree}>
-            Create Account
+          <PrimaryButton type="submit" disabled={!agree || loading}>
+            {loading ? "Creating…" : "Create Account"}
           </PrimaryButton>
         </div>
 
