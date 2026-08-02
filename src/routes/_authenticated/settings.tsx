@@ -22,6 +22,13 @@ const account = [
 ];
 
 function SettingsPage() {
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await authService.signOut();
+    navigate({ to: "/login", replace: true });
+  }
+
   return (
     <PhoneFrame>
       <div className="relative flex-1 bg-[#F7F8FC] pb-28">
