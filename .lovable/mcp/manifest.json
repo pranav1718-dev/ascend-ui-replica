@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "ascend-ui-replica",
+      "version": "0.1.0",
+      "title": "Ascend UI Replica"
+    },
+    "tools": [
+      {
+        "name": "list_screens",
+        "title": "List app screens",
+        "description": "List every screen in the ASCEND app with its route path and purpose.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_tracker_catalog",
+        "title": "Get tracker catalog",
+        "description": "Read the demo tracker content shown in the ASCEND app: goals, study subjects, workout stats or the weekly analytics overview.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "section": {
+              "type": "string",
+              "enum": [
+                "goals",
+                "study",
+                "workout",
+                "analytics"
+              ],
+              "description": "Which tracker section to read."
+            }
+          },
+          "required": [
+            "section"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
