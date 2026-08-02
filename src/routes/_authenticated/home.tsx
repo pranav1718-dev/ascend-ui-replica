@@ -15,14 +15,13 @@ import {
 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 
-export const Route = createFileRoute("/home")({
+export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
       { title: "ASCEND — Dashboard" },
       {
         name: "description",
-        content:
-          "Your daily progress, plan, stats and habits in one premium dashboard.",
+        content: "Your daily progress, plan, stats and habits in one premium dashboard.",
       },
     ],
   }),
@@ -108,7 +107,10 @@ function Header({ greeting, name }: { greeting: string; name: string }) {
       <div className="mt-4">
         <p className="text-[15px] text-slate-500 font-medium">{greeting},</p>
         <h1 className="mt-0.5 text-[28px] leading-tight font-extrabold tracking-tight text-slate-900 font-display">
-          {name} <span className="inline-block animate-[wave_1.6s_ease-in-out_infinite] origin-[70%_70%]">👋</span>
+          {name}{" "}
+          <span className="inline-block animate-[wave_1.6s_ease-in-out_infinite] origin-[70%_70%]">
+            👋
+          </span>
         </h1>
       </div>
       <style>{`@keyframes wave{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}30%{transform:rotate(14deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}}`}</style>
@@ -180,9 +182,7 @@ function DailyProgress({ percent }: { percent: number }) {
             Great job!
           </h4>
           <p className="text-[15px] text-slate-500 mt-0.5">Keep it up.</p>
-          <button
-            className="mt-4 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] bg-gradient-to-r from-[#1976D2] to-[#0D47A1] active:scale-[0.98] transition"
-          >
+          <button className="mt-4 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] bg-gradient-to-r from-[#1976D2] to-[#0D47A1] active:scale-[0.98] transition">
             View Stats
           </button>
         </div>
@@ -446,14 +446,7 @@ function ProgressChart() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.3 }}
           >
-            <rect
-              x={last.x - 26}
-              y={last.y - 30}
-              width={44}
-              height={22}
-              rx={11}
-              fill="#0D47A1"
-            />
+            <rect x={last.x - 26} y={last.y - 30} width={44} height={22} rx={11} fill="#0D47A1" />
             <text
               x={last.x - 4}
               y={last.y - 15}

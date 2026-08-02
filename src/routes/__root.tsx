@@ -80,14 +80,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "ASCEND — Be Better. Every Day." },
       {
         name: "description",
-        content:
-          "Track habits, workouts, studies and achieve your goals with ASCEND.",
+        content: "Track habits, workouts, studies and achieve your goals with ASCEND.",
       },
       { property: "og:title", content: "ASCEND — Be Better. Every Day." },
       {
         property: "og:description",
-        content:
-          "Track habits, workouts, studies and achieve your goals with ASCEND.",
+        content: "Track habits, workouts, studies and achieve your goals with ASCEND.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

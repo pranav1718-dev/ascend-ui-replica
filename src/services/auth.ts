@@ -52,7 +52,8 @@ export const authService = {
   async resetPassword(email: string) {
     if (!supabase) return { error: null };
     return supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+      redirectTo:
+        typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
     });
   },
 

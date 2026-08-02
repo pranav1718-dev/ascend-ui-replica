@@ -1,10 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { User, ChevronRight, UserPen, Bell, Palette, Settings as SettingsIcon, LifeBuoy } from "lucide-react";
+import {
+  User,
+  ChevronRight,
+  UserPen,
+  Bell,
+  Palette,
+  Settings as SettingsIcon,
+  LifeBuoy,
+} from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 
-export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile — ASCEND" }, { name: "description", content: "Your profile and stats." }] }),
+export const Route = createFileRoute("/_authenticated/profile")({
+  head: () => ({
+    meta: [
+      { title: "Profile — ASCEND" },
+      { name: "description", content: "Your profile and stats." },
+    ],
+  }),
   component: ProfilePage,
 });
 
@@ -27,7 +40,9 @@ function ProfilePage() {
                 <User className="h-9 w-9 text-slate-400" />
               </div>
             </div>
-            <h2 className="mt-3 text-[20px] font-extrabold text-slate-900 font-display">Pranav Gharge</h2>
+            <h2 className="mt-3 text-[20px] font-extrabold text-slate-900 font-display">
+              Pranav Gharge
+            </h2>
             <p className="text-[12.5px] text-slate-500 mt-0.5">Keep improving every day.</p>
           </div>
 
@@ -39,7 +54,9 @@ function ProfilePage() {
                 { label: "Study Hours", value: "120" },
               ].map((s) => (
                 <div key={s.label} className="px-2 text-center">
-                  <p className="text-[20px] font-extrabold text-slate-900 font-display tabular-nums">{s.value}</p>
+                  <p className="text-[20px] font-extrabold text-slate-900 font-display tabular-nums">
+                    {s.value}
+                  </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">{s.label}</p>
                 </div>
               ))}
@@ -49,7 +66,9 @@ function ProfilePage() {
           <div className="rounded-[20px] bg-white border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)] overflow-hidden">
             {items.map((item, i) => {
               const content = (
-                <div className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-slate-50" : ""}`}>
+                <div
+                  className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-slate-50" : ""}`}
+                >
                   <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-50">
                     <item.icon className="h-4 w-4 text-slate-600" />
                   </div>
@@ -57,7 +76,13 @@ function ProfilePage() {
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </div>
               );
-              return item.to ? <Link key={item.label} to={item.to}>{content}</Link> : <div key={item.label}>{content}</div>;
+              return item.to ? (
+                <Link key={item.label} to={item.to}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={item.label}>{content}</div>
+              );
             })}
           </div>
         </div>

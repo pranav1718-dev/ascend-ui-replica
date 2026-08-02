@@ -9,8 +9,7 @@ export const Route = createFileRoute("/")({
       { title: "ASCEND — Be Better. Every Day." },
       {
         name: "description",
-        content:
-          "Track habits, workouts, studies and achieve your goals with ASCEND.",
+        content: "Track habits, workouts, studies and achieve your goals with ASCEND.",
       },
     ],
   }),

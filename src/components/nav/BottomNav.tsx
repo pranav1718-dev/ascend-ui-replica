@@ -1,12 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import {
-  Home as HomeIcon,
-  CheckCircle2,
-  Dumbbell,
-  BookOpen,
-  User,
-} from "lucide-react";
+import { Home as HomeIcon, CheckCircle2, Dumbbell, BookOpen, User } from "lucide-react";
 
 const tabs = [
   { key: "home", label: "Home", icon: HomeIcon, to: "/home" },
