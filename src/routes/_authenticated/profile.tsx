@@ -3,7 +3,7 @@ import { User, ChevronRight, UserPen, Bell, Palette, Settings as SettingsIcon, L
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile — ASCEND" }, { name: "description", content: "Your profile and stats." }] }),
   component: ProfilePage,
 });

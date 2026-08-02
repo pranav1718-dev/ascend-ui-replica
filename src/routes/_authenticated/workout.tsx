@@ -6,7 +6,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
-export const Route = createFileRoute("/workout")({
+export const Route = createFileRoute("/_authenticated/workout")({
   head: () => ({ meta: [{ title: "Workout — ASCEND" }, { name: "description", content: "Today's workout plan." }] }),
   component: WorkoutPage,
 });

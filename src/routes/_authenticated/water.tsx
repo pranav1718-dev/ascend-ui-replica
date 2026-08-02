@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/water")({
+export const Route = createFileRoute("/_authenticated/water")({
   head: () => ({ meta: [{ title: "Water Tracker — ASCEND" }, { name: "description", content: "Track your daily water intake." }] }),
   component: WaterPage,
 });

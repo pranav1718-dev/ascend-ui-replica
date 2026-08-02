@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 
-export const Route = createFileRoute("/home")({
+export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
       { title: "ASCEND — Dashboard" },

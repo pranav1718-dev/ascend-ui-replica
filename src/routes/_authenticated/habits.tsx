@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
-export const Route = createFileRoute("/habits")({
+export const Route = createFileRoute("/_authenticated/habits")({
   head: () => ({ meta: [{ title: "Habits — ASCEND" }, { name: "description", content: "Track your daily habits." }] }),
   component: HabitsPage,
 });

@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
-export const Route = createFileRoute("/pomodoro")({
+export const Route = createFileRoute("/_authenticated/pomodoro")({
   head: () => ({ meta: [{ title: "Pomodoro — ASCEND" }, { name: "description", content: "Focus with the Pomodoro technique." }] }),
   component: PomodoroPage,
 });

@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
-export const Route = createFileRoute("/study")({
+export const Route = createFileRoute("/_authenticated/study")({
   head: () => ({ meta: [{ title: "Study — ASCEND" }, { name: "description", content: "Study plan and subjects." }] }),
   component: StudyPage,
 });

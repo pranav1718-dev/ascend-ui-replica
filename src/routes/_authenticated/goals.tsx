@@ -5,7 +5,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
-export const Route = createFileRoute("/goals")({
+export const Route = createFileRoute("/_authenticated/goals")({
   head: () => ({ meta: [{ title: "Goals — ASCEND" }, { name: "description", content: "Your active goals." }] }),
   component: GoalsPage,
 });
