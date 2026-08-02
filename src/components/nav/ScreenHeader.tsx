@@ -24,9 +24,7 @@ export function ScreenHeader({
       ) : (
         <span className="w-10" />
       )}
-      <h1 className="text-[17px] font-bold text-slate-900 font-display tracking-tight">
-        {title}
-      </h1>
+      <h1 className="text-[17px] font-bold text-slate-900 font-display tracking-tight">{title}</h1>
       <div className="w-10 flex justify-end">{right}</div>
     </div>
   );

@@ -2,10 +2,18 @@ import { defineTool } from "@lovable.dev/mcp-js";
 
 const SCREENS = [
   { path: "/", name: "Splash", description: "Animated splash screen that advances to onboarding." },
-  { path: "/onboarding", name: "Onboarding", description: "Intro artwork with Get Started and Sign In." },
+  {
+    path: "/onboarding",
+    name: "Onboarding",
+    description: "Intro artwork with Get Started and Sign In.",
+  },
   { path: "/login", name: "Login", description: "Email and password sign in." },
   { path: "/signup", name: "Sign Up", description: "Create an account." },
-  { path: "/home", name: "Home Dashboard", description: "Daily progress ring, stats and today's plan." },
+  {
+    path: "/home",
+    name: "Home Dashboard",
+    description: "Daily progress ring, stats and today's plan.",
+  },
   { path: "/habits", name: "Habits", description: "Daily habit tracking." },
   { path: "/workout", name: "Workout", description: "Today's workout plan and training stats." },
   { path: "/study", name: "Study", description: "Study planner and subject progress." },

@@ -45,9 +45,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             </button>
           )}
           {trailing && (
-            <div className="absolute inset-y-0 right-3 flex items-center">
-              {trailing}
-            </div>
+            <div className="absolute inset-y-0 right-3 flex items-center">{trailing}</div>
           )}
         </div>
       </div>

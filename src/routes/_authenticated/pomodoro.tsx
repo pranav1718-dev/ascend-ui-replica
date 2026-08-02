@@ -6,7 +6,12 @@ import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 
 export const Route = createFileRoute("/_authenticated/pomodoro")({
-  head: () => ({ meta: [{ title: "Pomodoro — ASCEND" }, { name: "description", content: "Focus with the Pomodoro technique." }] }),
+  head: () => ({
+    meta: [
+      { title: "Pomodoro — ASCEND" },
+      { name: "description", content: "Focus with the Pomodoro technique." },
+    ],
+  }),
   component: PomodoroPage,
 });
 
@@ -19,16 +24,24 @@ function PomodoroPage() {
   const [running, setRunning] = useState(false);
   const ref = useRef<number | null>(null);
 
-  useEffect(() => { setSeconds(modes[mode]); setRunning(false); }, [mode]);
+  useEffect(() => {
+    setSeconds(modes[mode]);
+    setRunning(false);
+  }, [mode]);
   useEffect(() => {
     if (!running) return;
     ref.current = window.setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => { if (ref.current) window.clearInterval(ref.current); };
+    return () => {
+      if (ref.current) window.clearInterval(ref.current);
+    };
   }, [running]);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
-  const size = 240, stroke = 12, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const size = 240,
+    stroke = 12,
+    r = (size - stroke) / 2,
+    c = 2 * Math.PI * r;
   const percent = 1 - seconds / modes[mode];
 
   return (
@@ -39,7 +52,13 @@ function PomodoroPage() {
 
           <div className="flex items-center gap-2 rounded-full bg-white p-1.5 border border-black/[0.04] shadow-sm">
             {(Object.keys(modes) as Mode[]).map((m) => (
-              <button key={m} onClick={() => setMode(m)} className={`flex-1 h-9 rounded-full text-[12.5px] font-semibold transition ${mode === m ? "bg-[#0D47A1] text-white shadow-md" : "text-slate-500"}`}>{m}</button>
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`flex-1 h-9 rounded-full text-[12.5px] font-semibold transition ${mode === m ? "bg-[#0D47A1] text-white shadow-md" : "text-slate-500"}`}
+              >
+                {m}
+              </button>
             ))}
           </div>
 
@@ -48,15 +67,36 @@ function PomodoroPage() {
               <svg width={size} height={size} className="-rotate-90">
                 <defs>
                   <linearGradient id="pomoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#42A5F5" /><stop offset="100%" stopColor="#0D47A1" />
+                    <stop offset="0%" stopColor="#42A5F5" />
+                    <stop offset="100%" stopColor="#0D47A1" />
                   </linearGradient>
                 </defs>
-                <circle cx={size / 2} cy={size / 2} r={r} stroke="#EEF2F7" strokeWidth={stroke} fill="none" />
-                <circle cx={size / 2} cy={size / 2} r={r} stroke="url(#pomoGrad)" strokeWidth={stroke} strokeLinecap="round" fill="none" strokeDasharray={c} strokeDashoffset={c - c * percent} style={{ transition: "stroke-dashoffset 1s linear" }} />
+                <circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={r}
+                  stroke="#EEF2F7"
+                  strokeWidth={stroke}
+                  fill="none"
+                />
+                <circle
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={r}
+                  stroke="url(#pomoGrad)"
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                  fill="none"
+                  strokeDasharray={c}
+                  strokeDashoffset={c - c * percent}
+                  style={{ transition: "stroke-dashoffset 1s linear" }}
+                />
               </svg>
               <div className="absolute inset-0 grid place-items-center">
                 <div className="text-center">
-                  <p className="text-[48px] font-extrabold text-slate-900 font-display tabular-nums leading-none">{mm}:{ss}</p>
+                  <p className="text-[48px] font-extrabold text-slate-900 font-display tabular-nums leading-none">
+                    {mm}:{ss}
+                  </p>
                   <p className="text-[13px] text-slate-500 mt-2">{mode} Time</p>
                 </div>
               </div>
@@ -64,10 +104,19 @@ function PomodoroPage() {
           </div>
 
           <div className="flex items-center justify-center gap-4 pt-2">
-            <button onClick={() => setRunning((r) => !r)} className="h-12 min-w-[140px] rounded-full bg-gradient-to-r from-[#1976D2] to-[#0D47A1] text-white text-[14px] font-semibold shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] active:scale-95 transition">
+            <button
+              onClick={() => setRunning((r) => !r)}
+              className="h-12 min-w-[140px] rounded-full bg-gradient-to-r from-[#1976D2] to-[#0D47A1] text-white text-[14px] font-semibold shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] active:scale-95 transition"
+            >
               {running ? "Pause" : "Start"}
             </button>
-            <button onClick={() => { setRunning(false); setSeconds(modes[mode]); }} className="grid h-12 w-12 place-items-center rounded-full bg-white border border-black/[0.04] shadow-sm active:scale-95 transition">
+            <button
+              onClick={() => {
+                setRunning(false);
+                setSeconds(modes[mode]);
+              }}
+              className="grid h-12 w-12 place-items-center rounded-full bg-white border border-black/[0.04] shadow-sm active:scale-95 transition"
+            >
               <RotateCcw className="h-4 w-4 text-slate-700" />
             </button>
           </div>
@@ -80,7 +129,9 @@ function PomodoroPage() {
             <div className="rounded-[20px] bg-white p-4 border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)] flex items-center justify-between">
               <div>
                 <p className="text-[13px] text-slate-500">Completed</p>
-                <p className="text-[22px] font-extrabold text-slate-900 font-display">3<span className="text-slate-400 text-[16px]">/8</span></p>
+                <p className="text-[22px] font-extrabold text-slate-900 font-display">
+                  3<span className="text-slate-400 text-[16px]">/8</span>
+                </p>
               </div>
               <div className="text-3xl">🌱</div>
             </div>

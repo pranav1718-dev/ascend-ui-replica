@@ -45,7 +45,11 @@ export const db = {
 
   async insert<T extends Row>(table: TableName, row: Omit<T, "id"> & { id?: string }): Promise<T> {
     if (supabase) {
-      const { data, error } = await supabase.from(table).insert(row as never).select().single();
+      const { data, error } = await supabase
+        .from(table)
+        .insert(row as never)
+        .select()
+        .single();
       if (error) throw error;
       return data as T;
     }
@@ -57,7 +61,12 @@ export const db = {
 
   async update<T extends Row>(table: TableName, id: string, patch: Partial<T>): Promise<T> {
     if (supabase) {
-      const { data, error } = await supabase.from(table).update(patch as never).eq("id", id).select().single();
+      const { data, error } = await supabase
+        .from(table)
+        .update(patch as never)
+        .eq("id", id)
+        .select()
+        .single();
       if (error) throw error;
       return data as T;
     }

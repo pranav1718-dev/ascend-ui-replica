@@ -57,12 +57,8 @@ function SignUp() {
         className="flex-1 flex flex-col px-6 pt-8 pb-8 mx-auto w-full max-w-[420px]"
       >
         <div>
-          <h1 className="text-[26px] font-bold text-primary font-display">
-            Create Account
-          </h1>
-          <p className="mt-3 text-[13px] text-muted-foreground">
-            Start your journey with ASCEND
-          </p>
+          <h1 className="text-[26px] font-bold text-primary font-display">Create Account</h1>
+          <p className="mt-3 text-[13px] text-muted-foreground">Start your journey with ASCEND</p>
         </div>
 
         <div className="space-y-6 mt-8">
@@ -96,9 +92,7 @@ function SignUp() {
         <div className="mt-8">
           <Checkbox checked={agree} onChange={setAgree} id="terms">
             I agree to the{" "}
-            <span className="text-[var(--brand-blue)] font-medium">
-              Terms &amp; Privacy Policy
-            </span>
+            <span className="text-[var(--brand-blue)] font-medium">Terms &amp; Privacy Policy</span>
           </Checkbox>
         </div>
 

@@ -54,12 +54,8 @@ function Login() {
         className="flex-1 flex flex-col px-6 pt-8 pb-8 mx-auto w-full max-w-[420px]"
       >
         <div>
-          <h1 className="text-[26px] font-bold text-primary font-display">
-            Welcome Back!
-          </h1>
-          <p className="mt-3 text-[13px] text-muted-foreground">
-            Login to continue your journey
-          </p>
+          <h1 className="text-[26px] font-bold text-primary font-display">Welcome Back!</h1>
+          <p className="mt-3 text-[13px] text-muted-foreground">Login to continue your journey</p>
         </div>
 
         <button
@@ -86,9 +82,7 @@ function Login() {
           />
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[13px] font-medium text-muted-foreground">
-                Password
-              </label>
+              <label className="text-[13px] font-medium text-muted-foreground">Password</label>
             </div>
             <div className="relative">
               <input
@@ -108,10 +102,7 @@ function Login() {
           </div>
         </div>
 
-        {error && (
-          <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>
-        )}
-
+        {error && <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>}
 
         <div className="mt-8">
           <Checkbox checked={remember} onChange={setRemember} id="remember">
