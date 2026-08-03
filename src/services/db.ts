@@ -1,91 +1,78 @@
-import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
-import { storage } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
 import type { TableName } from "@/types/models";
 
 /**
- * Generic per-user CRUD service.
+ * Generic per-user CRUD service backed entirely by Supabase.
  *
- * - When Supabase is configured: reads/writes go to the Supabase table.
- * - When not configured: falls back to localStorage under `ascend:<table>`.
- *
- * This keeps the UI working during manual integration, and swaps to real
- * data automatically once VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY
- * are set.
+ * Every row is scoped to the signed-in user: `user_id` is filled in on
+ * insert and RLS enforces owner-only access on the server. There is no
+ * localStorage fallback any more — if the client is not configured the
+ * calls fail loudly instead of silently writing to the browser.
  */
 
 type Row = Record<string, unknown> & { id: string; user_id?: string };
 
-const key = (table: TableName) => `ascend:${table}`;
+/** Tables keyed by the user's auth id instead of a `user_id` column. */
+const OWNER_ID_COLUMN: Partial<Record<TableName, string>> = { profiles: "id" };
 
-function uuid() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+function client() {
+  if (!supabase) {
+    throw new Error(
+      "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.",
+    );
+  }
+  return supabase;
+}
+
+async function currentUserId(): Promise<string> {
+  const { data, error } = await client().auth.getUser();
+  if (error || !data.user) throw new Error("You must be signed in.");
+  return data.user.id;
 }
 
 export const db = {
-  isRemote: () => isSupabaseConfigured,
+  isRemote: () => true,
 
   async list<T extends Row>(table: TableName): Promise<T[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from(table).select("*");
-      if (error) throw error;
-      return (data as T[]) ?? [];
-    }
-    return storage.get<T[]>(key(table), []);
+    const userId = await currentUserId();
+    const column = OWNER_ID_COLUMN[table] ?? "user_id";
+    const { data, error } = await client().from(table).select("*").eq(column, userId);
+    if (error) throw error;
+    return (data as T[]) ?? [];
   },
 
   async getById<T extends Row>(table: TableName, id: string): Promise<T | null> {
-    if (supabase) {
-      const { data, error } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
-      if (error) throw error;
-      return (data as T) ?? null;
-    }
-    return storage.get<T[]>(key(table), []).find((r) => r.id === id) ?? null;
+    const { data, error } = await client().from(table).select("*").eq("id", id).maybeSingle();
+    if (error) throw error;
+    return (data as T) ?? null;
   },
 
   async insert<T extends Row>(table: TableName, row: Omit<T, "id"> & { id?: string }): Promise<T> {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from(table)
-        .insert(row as never)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as T;
-    }
-    const rows = storage.get<T[]>(key(table), []);
-    const created = { ...(row as object), id: row.id ?? uuid() } as T;
-    storage.set(key(table), [created, ...rows]);
-    return created;
+    const userId = await currentUserId();
+    const column = OWNER_ID_COLUMN[table] ?? "user_id";
+    const payload = { ...(row as object), [column]: userId };
+    const { data, error } = await client()
+      .from(table)
+      .insert(payload as never)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as T;
   },
 
   async update<T extends Row>(table: TableName, id: string, patch: Partial<T>): Promise<T> {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from(table)
-        .update(patch as never)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as T;
-    }
-    const rows = storage.get<T[]>(key(table), []);
-    const next = rows.map((r) => (r.id === id ? { ...r, ...patch } : r));
-    storage.set(key(table), next);
-    return next.find((r) => r.id === id) as T;
+    const { data, error } = await client()
+      .from(table)
+      .update(patch as never)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as T;
   },
 
   async remove(table: TableName, id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) throw error;
-      return;
-    }
-    const rows = storage.get<Row[]>(key(table), []);
-    storage.set(
-      key(table),
-      rows.filter((r) => r.id !== id),
-    );
+    const { error } = await client().from(table).delete().eq("id", id);
+    if (error) throw error;
   },
 };
