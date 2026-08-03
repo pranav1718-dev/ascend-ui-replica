@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
@@ -22,11 +22,29 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Email confirmation links land back here with ?confirmed=1
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("confirmed")) {
+      setNotice("Email confirmed — you can log in now.");
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your password.");
+      return;
+    }
     setLoading(true);
     const { error: err } = await authService.signIn(email, password);
     setLoading(false);
@@ -37,14 +55,10 @@ function Login() {
     navigate({ to: "/home" });
   }
 
-  async function handleForgot() {
+  async function handleGoogle() {
     setError(null);
-    if (!email) {
-      setError("Enter your email first.");
-      return;
-    }
-    await authService.resetPassword(email);
-    setError("Password reset link sent to your email.");
+    const { error: err } = await authService.signInWithGoogle();
+    if (err) setError(err.message);
   }
 
   return (
@@ -60,6 +74,7 @@ function Login() {
 
         <button
           type="button"
+          onClick={handleGoogle}
           className="mt-8 w-full h-12 rounded-xl border border-border bg-background flex items-center justify-center gap-3 text-[14px] font-medium text-foreground hover:bg-accent transition"
         >
           <GoogleIcon />
@@ -93,7 +108,7 @@ function Login() {
               />
               <button
                 type="button"
-                onClick={handleForgot}
+                onClick={() => navigate({ to: "/forgot-password" })}
                 className="absolute inset-y-0 right-3 flex items-center text-[13px] font-medium text-[var(--brand-blue)]"
               >
                 Forgot?
@@ -103,6 +118,7 @@ function Login() {
         </div>
 
         {error && <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>}
+        {notice && <p className="mt-4 text-[12.5px] text-emerald-600">{notice}</p>}
 
         <div className="mt-8">
           <Checkbox checked={remember} onChange={setRemember} id="remember">
