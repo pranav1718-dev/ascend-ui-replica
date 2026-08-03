@@ -108,7 +108,7 @@ function Login() {
               />
               <button
                 type="button"
-                onClick={handleForgot}
+                onClick={() => navigate({ to: "/forgot-password" })}
                 className="absolute inset-y-0 right-3 flex items-center text-[13px] font-medium text-[var(--brand-blue)]"
               >
                 Forgot?
