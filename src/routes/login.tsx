@@ -75,6 +75,7 @@ function Login() {
 
         <button
           type="button"
+          onClick={handleGoogle}
           className="mt-8 w-full h-12 rounded-xl border border-border bg-background flex items-center justify-center gap-3 text-[14px] font-medium text-foreground hover:bg-accent transition"
         >
           <GoogleIcon />
