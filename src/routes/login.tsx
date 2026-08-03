@@ -22,11 +22,29 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Email confirmation links land back here with ?confirmed=1
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("confirmed")) {
+      setNotice("Email confirmed — you can log in now.");
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your password.");
+      return;
+    }
     setLoading(true);
     const { error: err } = await authService.signIn(email, password);
     setLoading(false);
@@ -37,15 +55,12 @@ function Login() {
     navigate({ to: "/home" });
   }
 
-  async function handleForgot() {
+  async function handleGoogle() {
     setError(null);
-    if (!email) {
-      setError("Enter your email first.");
-      return;
-    }
-    await authService.resetPassword(email);
-    setError("Password reset link sent to your email.");
+    const { error: err } = await authService.signInWithGoogle();
+    if (err) setError(err.message);
   }
+
 
   return (
     <PhoneFrame>
