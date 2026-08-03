@@ -126,15 +126,52 @@ export interface Settings {
   updated_at: string;
 }
 
+export interface PomodoroSession {
+  id: string;
+  user_id: string;
+  study_session_id: string | null;
+  label: string | null;
+  focus_min: number;
+  break_min: number;
+  rounds: number;
+  started_at: string;
+  ended_at: string | null;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WaterTracking {
+  id: string;
+  user_id: string;
+  log_date: string;
+  glasses: number;
+  goal_glasses: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnalyticsDay {
+  id: string;
+  user_id: string;
+  day: string;
+  habits_done: number;
+  workouts_done: number;
+  study_minutes: number;
+  focus_minutes: number;
+  water_glasses: number;
+  score: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Tables that exist in Supabase (see db/schema.sql). */
 export type TableName =
   | "profiles"
   | "goals"
   | "habits"
-  | "tasks"
   | "workouts"
   | "study_sessions"
-  | "journal_entries"
-  | "moods"
-  | "calendar_events"
-  | "notifications"
-  | "settings";
+  | "pomodoro_sessions"
+  | "water_tracking"
+  | "analytics";
