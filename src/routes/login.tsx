@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PrimaryButton } from "@/components/auth/PrimaryButton";
