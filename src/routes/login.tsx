@@ -119,6 +119,7 @@ function Login() {
         </div>
 
         {error && <p className="mt-4 text-[12.5px] text-rose-500">{error}</p>}
+        {notice && <p className="mt-4 text-[12.5px] text-emerald-600">{notice}</p>}
 
         <div className="mt-8">
           <Checkbox checked={remember} onChange={setRemember} id="remember">
