@@ -258,14 +258,14 @@ function WorkoutPage() {
             { name: "duration_min", label: "Duration (min)", type: "number", required: false },
             { name: "scheduled_at", label: "Date", type: "date", required: false },
           ]}
-          onSubmit={(v) =>
-            create({
+          onSubmit={async (v) => {
+            await create({
               name: v.name.trim(),
               category: v.category || undefined,
               duration_min: v.duration_min ? Number(v.duration_min) : undefined,
               scheduled_at: v.scheduled_at ? new Date(v.scheduled_at).toISOString() : null,
-            })
-          }
+            });
+          }}
         />
 
         <SheetDialog
