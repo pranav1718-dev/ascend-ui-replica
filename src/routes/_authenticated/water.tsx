@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useWater } from "@/hooks/use-ascend";
 import { ChevronLeft, Minus, Plus, Droplet } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
@@ -16,9 +16,9 @@ export const Route = createFileRoute("/_authenticated/water")({
 });
 
 function WaterPage() {
-  const [glasses, setGlasses] = useState(5);
-  const total = 8;
-  const liters = (glasses * 0.3).toFixed(1);
+  const { glasses, goal, setGlasses } = useWater();
+  const total = goal;
+  const liters = (glasses * 0.25).toFixed(2);
   const size = 200,
     stroke = 14,
     r = (size - stroke) / 2,
@@ -75,7 +75,9 @@ function WaterPage() {
                   <p className="text-[36px] font-extrabold text-slate-900 font-display tabular-nums leading-none">
                     {liters} L
                   </p>
-                  <p className="text-[13px] text-slate-500 mt-1">of 3.0 L</p>
+                  <p className="text-[13px] text-slate-500 mt-1">
+                    of {(total * 0.25).toFixed(1)} L
+                  </p>
                 </div>
               </div>
             </div>
@@ -83,14 +85,14 @@ function WaterPage() {
 
           <div className="flex items-center justify-center gap-6">
             <button
-              onClick={() => setGlasses(Math.max(0, glasses - 1))}
+              onClick={() => void setGlasses(Math.max(0, glasses - 1))}
               className="grid h-11 w-11 place-items-center rounded-full bg-white border border-black/[0.04] shadow-sm active:scale-95 transition"
             >
               <Minus className="h-4 w-4 text-slate-700" />
             </button>
             <p className="text-[15px] font-semibold text-slate-700">Today</p>
             <button
-              onClick={() => setGlasses(glasses + 1)}
+              onClick={() => void setGlasses(glasses + 1)}
               className="grid h-11 w-11 place-items-center rounded-full bg-white border border-black/[0.04] shadow-sm active:scale-95 transition"
             >
               <Plus className="h-4 w-4 text-slate-700" />
@@ -110,9 +112,15 @@ function WaterPage() {
           <div>
             <p className="text-[13px] font-semibold text-slate-500 mb-2">Quick Add</p>
             <div className="grid grid-cols-4 gap-2">
-              {["250 ml", "500 ml", "750 ml", "1 L"].map((q) => (
+              {[
+                { q: "250 ml", n: 1 },
+                { q: "500 ml", n: 2 },
+                { q: "750 ml", n: 3 },
+                { q: "1 L", n: 4 },
+              ].map(({ q, n }) => (
                 <button
                   key={q}
+                  onClick={() => void setGlasses(glasses + n)}
                   className="h-11 rounded-full bg-white border border-black/[0.04] shadow-sm text-[13px] font-semibold text-slate-700 active:scale-95 transition"
                 >
                   {q}

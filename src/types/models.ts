@@ -33,6 +33,7 @@ export interface Habit {
   user_id: string;
   name: string;
   icon: string | null;
+  last_completed_on?: string | null;
   frequency: "daily" | "weekly";
   streak: number;
   completed_today: boolean;
@@ -171,7 +172,48 @@ export type TableName =
   | "goals"
   | "habits"
   | "workouts"
+  | "workout_exercises"
+  | "study_subjects"
   | "study_sessions"
   | "pomodoro_sessions"
   | "water_tracking"
-  | "analytics";
+  | "analytics"
+  | "user_settings";
+
+export interface WorkoutExercise {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  name: string;
+  sets: number;
+  reps: number;
+  weight_kg: number | null;
+  muscle: string | null;
+  position: number;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudySubject {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string | null;
+  progress: number;
+  target_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSettings {
+  user_id: string;
+  theme: "light" | "dark" | "system";
+  units: "metric" | "imperial";
+  notifications_enabled: boolean;
+  water_goal_glasses: number;
+  focus_min: number;
+  break_min: number;
+  created_at: string;
+  updated_at: string;
+}

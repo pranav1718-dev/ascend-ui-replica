@@ -33,6 +33,32 @@ async function currentUserId(): Promise<string> {
 export const db = {
   isRemote: () => true,
 
+  /** Raw query builder for a table (already authenticated, RLS applies). */
+  from(table: TableName) {
+    return client().from(table);
+  },
+
+  /** Id of the signed-in user. Throws when there is no session. */
+  userId: currentUserId,
+
+  /** Insert-or-update on a unique constraint. */
+  async upsert<T>(
+    table: TableName,
+    row: Record<string, unknown>,
+    onConflict: string,
+  ): Promise<T> {
+    const userId = await currentUserId();
+    const column = OWNER_ID_COLUMN[table] ?? "user_id";
+    const { data, error } = await client()
+      .from(table)
+      .upsert({ ...row, [column]: userId } as never, { onConflict })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as T;
+  },
+
+
   async list<T extends Row>(table: TableName): Promise<T[]> {
     const userId = await currentUserId();
     const column = OWNER_ID_COLUMN[table] ?? "user_id";
