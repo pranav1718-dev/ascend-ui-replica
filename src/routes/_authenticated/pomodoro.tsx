@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
+import { usePomodoro, useSettings } from "@/hooks/use-ascend";
 
 export const Route = createFileRoute("/_authenticated/pomodoro")({
   head: () => ({
@@ -15,19 +16,34 @@ export const Route = createFileRoute("/_authenticated/pomodoro")({
   component: PomodoroPage,
 });
 
-const modes = { Focus: 25 * 60, "Short Break": 5 * 60, "Long Break": 15 * 60 } as const;
-type Mode = keyof typeof modes;
+type Mode = "Focus" | "Short Break" | "Long Break";
 
 function PomodoroPage() {
+  const { settings } = useSettings();
+  const { completedToday, focusMinutesToday, record } = usePomodoro();
+
+  const modes = useMemo(
+    () =>
+      ({
+        Focus: settings.focus_min * 60,
+        "Short Break": settings.break_min * 60,
+        "Long Break": 15 * 60,
+      }) as Record<Mode, number>,
+    [settings.focus_min, settings.break_min],
+  );
+
   const [mode, setMode] = useState<Mode>("Focus");
   const [seconds, setSeconds] = useState(modes.Focus);
   const [running, setRunning] = useState(false);
   const ref = useRef<number | null>(null);
+  const saved = useRef(false);
 
   useEffect(() => {
     setSeconds(modes[mode]);
     setRunning(false);
-  }, [mode]);
+    saved.current = false;
+  }, [mode, modes]);
+
   useEffect(() => {
     if (!running) return;
     ref.current = window.setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
@@ -35,6 +51,20 @@ function PomodoroPage() {
       if (ref.current) window.clearInterval(ref.current);
     };
   }, [running]);
+
+  // A finished Focus round is stored in Supabase exactly once.
+  useEffect(() => {
+    if (seconds !== 0 || saved.current) return;
+    saved.current = true;
+    setRunning(false);
+    if (mode === "Focus") {
+      void record({
+        focus_min: settings.focus_min,
+        break_min: settings.break_min,
+        label: "Focus",
+      });
+    }
+  }, [seconds, mode, record, settings.focus_min, settings.break_min]);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
@@ -51,7 +81,7 @@ function PomodoroPage() {
           <ScreenHeader title="Pomodoro" />
 
           <div className="flex items-center gap-2 rounded-full bg-white p-1.5 border border-black/[0.04] shadow-sm">
-            {(Object.keys(modes) as Mode[]).map((m) => (
+            {(["Focus", "Short Break", "Long Break"] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -105,7 +135,10 @@ function PomodoroPage() {
 
           <div className="flex items-center justify-center gap-4 pt-2">
             <button
-              onClick={() => setRunning((r) => !r)}
+              onClick={() => {
+                saved.current = false;
+                setRunning((r) => !r);
+              }}
               className="h-12 min-w-[140px] rounded-full bg-gradient-to-r from-[#1976D2] to-[#0D47A1] text-white text-[14px] font-semibold shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] active:scale-95 transition"
             >
               {running ? "Pause" : "Start"}
@@ -113,6 +146,7 @@ function PomodoroPage() {
             <button
               onClick={() => {
                 setRunning(false);
+                saved.current = false;
                 setSeconds(modes[mode]);
               }}
               className="grid h-12 w-12 place-items-center rounded-full bg-white border border-black/[0.04] shadow-sm active:scale-95 transition"
@@ -124,13 +158,16 @@ function PomodoroPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[13px] font-semibold text-slate-500">Today's Sessions</p>
-              <button className="text-[12.5px] font-semibold text-[#1976D2]">View Stats</button>
+              <span className="text-[12.5px] font-semibold text-[#1976D2]">
+                {focusMinutesToday} min focused
+              </span>
             </div>
             <div className="rounded-[20px] bg-white p-4 border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)] flex items-center justify-between">
               <div>
                 <p className="text-[13px] text-slate-500">Completed</p>
                 <p className="text-[22px] font-extrabold text-slate-900 font-display">
-                  3<span className="text-slate-400 text-[16px]">/8</span>
+                  {completedToday}
+                  <span className="text-slate-400 text-[16px]">/8</span>
                 </p>
               </div>
               <div className="text-3xl">🌱</div>
