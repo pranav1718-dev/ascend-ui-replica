@@ -1,19 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Menu,
   Bell,
   Check,
   Dumbbell,
   BookOpen,
-  BookMarked,
-  Home as HomeIcon,
-  CheckCircle2,
   User,
   Target,
+  CheckCircle2,
 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
+import { BottomNav } from "@/components/nav/BottomNav";
+import {
+  todayISO,
+  useAnalytics,
+  useGoals,
+  useHabits,
+  useProfile,
+  useStudySessions,
+  useWorkouts,
+} from "@/hooks/use-ascend";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -56,16 +64,105 @@ function useCountUp(target: number, duration = 900) {
 
 function HomePage() {
   const greeting = useGreeting();
+  const { profile } = useProfile();
+  const { habits, doneCount, total } = useHabits();
+  const { workouts } = useWorkouts();
+  const { sessions } = useStudySessions();
+  const { goals } = useGoals();
+  const { data: week } = useAnalytics(7);
+
+  const today = todayISO();
+
+  const todaysWorkouts = useMemo(
+    () => workouts.filter((w) => w.scheduled_at && todayISO(new Date(w.scheduled_at)) === today),
+    [workouts, today],
+  );
+  const todaysSessions = useMemo(
+    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === today),
+    [sessions, today],
+  );
+
+  const plan: PlanItem[] = useMemo(() => {
+    const items: PlanItem[] = [];
+    todaysWorkouts.forEach((w) =>
+      items.push({
+        key: `w-${w.id}`,
+        icon: Dumbbell,
+        title: w.name,
+        subtitle: w.category ?? "Workout",
+        meta: w.scheduled_at
+          ? new Date(w.scheduled_at).toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : "Today",
+        completed: w.completed,
+        tint: "bg-teal-50",
+        fg: "text-teal-600",
+      }),
+    );
+    todaysSessions.forEach((s) =>
+      items.push({
+        key: `s-${s.id}`,
+        icon: BookOpen,
+        title: s.subject,
+        subtitle: s.topic ?? "Study Session",
+        meta: new Date(s.started_at).toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+        completed: s.completed,
+        tint: "bg-orange-50",
+        fg: "text-orange-500",
+      }),
+    );
+    habits
+      .filter((h) => !h.completed_today)
+      .slice(0, 3)
+      .forEach((h) =>
+        items.push({
+          key: `h-${h.id}`,
+          icon: CheckCircle2,
+          title: h.name,
+          subtitle: "Habit",
+          meta: "Today",
+          tint: "bg-amber-50",
+          fg: "text-amber-600",
+        }),
+      );
+    return items.slice(0, 5);
+  }, [todaysWorkouts, todaysSessions, habits]);
+
+  const todayStat = week?.[week.length - 1];
+  const prevStat = week?.[week.length - 2];
+  const percent = todayStat?.score ?? 0;
+
+  const weekStudyHours = (week ?? []).reduce((a, d) => a + d.studyMinutes, 0) / 60;
+  const weekWorkouts = (week ?? []).reduce((a, d) => a + d.workouts, 0);
+  const habitPct = total ? Math.round((doneCount / total) * 100) : 0;
+
+  const activeGoals = goals.filter((g) => g.status !== "archived");
+  const goalAvg = activeGoals.length
+    ? Math.round(activeGoals.reduce((a, g) => a + (g.progress ?? 0), 0) / activeGoals.length)
+    : 0;
+
+  const chartData = (week ?? []).map((d) => d.score);
+  const firstName = (profile?.full_name ?? "").split(" ")[0] || "there";
 
   return (
     <PhoneFrame>
       <div className="relative flex-1 bg-[#F7F8FC] pb-28">
         <div className="px-6 pt-6 space-y-6">
-          <Header greeting={greeting} name="Pranav" />
-          <DailyProgress percent={72} />
-          <TodaysPlan />
-          <StatsRow />
-          <ProgressChart />
+          <Header greeting={greeting} name={firstName} />
+          <DailyProgress percent={percent} delta={percent - (prevStat?.score ?? 0)} />
+          <TodaysPlan items={plan} />
+          <StatsRow
+            workouts={weekWorkouts}
+            studyHours={Number(weekStudyHours.toFixed(1))}
+            habitPct={habitPct}
+            goalAvg={goalAvg}
+          />
+          <ProgressChart data={chartData} />
         </div>
         <BottomNav />
       </div>
@@ -83,25 +180,28 @@ function Header({ greeting, name }: { greeting: string; name: string }) {
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <div className="flex items-center justify-between">
-        <button
+        <Link
+          to="/settings"
           aria-label="Menu"
           className="grid h-10 w-10 place-items-center rounded-2xl bg-white/70 backdrop-blur border border-black/[0.04] shadow-sm active:scale-95 transition"
         >
           <Menu className="h-5 w-5 text-slate-700" />
-        </button>
+        </Link>
         <div className="flex items-center gap-3">
           <button
             aria-label="Notifications"
             className="relative grid h-10 w-10 place-items-center rounded-2xl bg-white/70 backdrop-blur border border-black/[0.04] shadow-sm active:scale-95 transition"
           >
             <Bell className="h-5 w-5 text-slate-700" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
           </button>
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] p-[2px] shadow-md">
+          <Link
+            to="/profile"
+            className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] p-[2px] shadow-md"
+          >
             <div className="h-full w-full rounded-full bg-white grid place-items-center overflow-hidden">
               <User className="h-5 w-5 text-slate-500" />
             </div>
-          </div>
+          </Link>
         </div>
       </div>
       <div className="mt-4">
@@ -120,13 +220,22 @@ function Header({ greeting, name }: { greeting: string; name: string }) {
 
 /* ---------- Daily Progress ---------- */
 
-function DailyProgress({ percent }: { percent: number }) {
+function DailyProgress({ percent, delta }: { percent: number; delta: number }) {
   const value = useCountUp(percent);
   const size = 128;
   const stroke = 12;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const offset = c - (value / 100) * c;
+
+  const headline =
+    percent >= 80 ? "Great job!" : percent >= 40 ? "Keep going!" : percent > 0 ? "Good start" : "Let's begin";
+  const sub =
+    percent === 0
+      ? "Log something to start today."
+      : delta >= 0
+        ? "Ahead of yesterday."
+        : "Keep it up.";
 
   return (
     <motion.div
@@ -179,12 +288,15 @@ function DailyProgress({ percent }: { percent: number }) {
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-[22px] font-extrabold tracking-tight text-slate-900 font-display">
-            Great job!
+            {headline}
           </h4>
-          <p className="text-[15px] text-slate-500 mt-0.5">Keep it up.</p>
-          <button className="mt-4 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] bg-gradient-to-r from-[#1976D2] to-[#0D47A1] active:scale-[0.98] transition">
+          <p className="text-[15px] text-slate-500 mt-0.5">{sub}</p>
+          <Link
+            to="/analytics"
+            className="mt-4 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(25,118,210,0.55)] bg-gradient-to-r from-[#1976D2] to-[#0D47A1] active:scale-[0.98] transition"
+          >
             View Stats
-          </button>
+          </Link>
         </div>
       </div>
     </motion.div>
@@ -194,6 +306,7 @@ function DailyProgress({ percent }: { percent: number }) {
 /* ---------- Today's Plan ---------- */
 
 type PlanItem = {
+  key: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle: string;
@@ -203,47 +316,27 @@ type PlanItem = {
   fg: string;
 };
 
-const plan: PlanItem[] = [
-  {
-    icon: Dumbbell,
-    title: "Morning Workout",
-    subtitle: "Leg Day",
-    meta: "Completed",
-    completed: true,
-    tint: "bg-teal-50",
-    fg: "text-teal-600",
-  },
-  {
-    icon: BookOpen,
-    title: "Study Session",
-    subtitle: "Data Structures",
-    meta: "2:00 PM",
-    tint: "bg-orange-50",
-    fg: "text-orange-500",
-  },
-  {
-    icon: BookMarked,
-    title: "Read Book",
-    subtitle: "Atomic Habits",
-    meta: "9:00 PM",
-    tint: "bg-amber-50",
-    fg: "text-amber-600",
-  },
-];
-
-function TodaysPlan() {
+function TodaysPlan({ items }: { items: PlanItem[] }) {
   return (
     <div>
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-semibold text-slate-900">Today's Plan</h3>
-        <button className="text-[13px] font-semibold text-[#1976D2] active:opacity-70">
+        <Link to="/calendar" className="text-[13px] font-semibold text-[#1976D2] active:opacity-70">
           See All
-        </button>
+        </Link>
       </div>
       <div className="mt-3 space-y-2.5">
-        {plan.map((item, i) => (
+        {items.length === 0 && (
+          <div className="rounded-[20px] bg-white p-5 text-center shadow-[0_4px_18px_rgba(15,23,42,0.04)] border border-black/[0.03]">
+            <p className="text-[14px] font-semibold text-slate-700">Nothing planned yet</p>
+            <p className="text-[12.5px] text-slate-500 mt-1">
+              Add a workout, study session or habit to see it here.
+            </p>
+          </div>
+        )}
+        {items.map((item, i) => (
           <motion.div
-            key={item.title}
+            key={item.key}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.08 + i * 0.06 }}
@@ -278,35 +371,44 @@ function TodaysPlan() {
 
 /* ---------- Stats Row ---------- */
 
-const stats = [
-  {
-    label: "Workouts",
-    value: 5,
-    delta: "+20%",
-    icon: Dumbbell,
-    tint: "bg-violet-50",
-    fg: "text-violet-500",
-  },
-  {
-    label: "Study Hours",
-    value: 12.5,
-    delta: "+15%",
-    icon: BookOpen,
-    tint: "bg-orange-50",
-    fg: "text-orange-500",
-  },
-  {
-    label: "Habits",
-    value: 85,
-    suffix: "%",
-    delta: "+10%",
-    icon: Target,
-    tint: "bg-emerald-50",
-    fg: "text-emerald-500",
-  },
-];
-
-function StatsRow() {
+function StatsRow({
+  workouts,
+  studyHours,
+  habitPct,
+  goalAvg,
+}: {
+  workouts: number;
+  studyHours: number;
+  habitPct: number;
+  goalAvg: number;
+}) {
+  const stats = [
+    {
+      label: "Workouts",
+      value: workouts,
+      caption: "this week",
+      icon: Dumbbell,
+      tint: "bg-violet-50",
+      fg: "text-violet-500",
+    },
+    {
+      label: "Study Hours",
+      value: studyHours,
+      caption: "this week",
+      icon: BookOpen,
+      tint: "bg-orange-50",
+      fg: "text-orange-500",
+    },
+    {
+      label: "Habits",
+      value: habitPct,
+      suffix: "%",
+      caption: `goals ${goalAvg}%`,
+      icon: Target,
+      tint: "bg-emerald-50",
+      fg: "text-emerald-500",
+    },
+  ];
   return (
     <div className="grid grid-cols-3 gap-2.5">
       {stats.map((s, i) => (
@@ -320,7 +422,7 @@ function StatCard({
   label,
   value,
   suffix,
-  delta,
+  caption,
   icon: Icon,
   tint,
   fg,
@@ -329,7 +431,7 @@ function StatCard({
   label: string;
   value: number;
   suffix?: string;
-  delta: string;
+  caption: string;
   icon: React.ComponentType<{ className?: string }>;
   tint: string;
   fg: string;
@@ -351,31 +453,29 @@ function StatCard({
         {n}
         {suffix ?? ""}
       </p>
-      <p className="mt-1 text-[11px] font-semibold text-emerald-500">{delta}</p>
-      <p className="text-[10.5px] text-slate-400 leading-tight">from last week</p>
+      <p className="text-[10.5px] text-slate-400 leading-tight mt-1">{caption}</p>
     </motion.div>
   );
 }
 
 /* ---------- Progress Chart ---------- */
 
-function ProgressChart() {
-  const data = [30, 42, 38, 55, 48, 78, 72, 85];
+function ProgressChart({ data }: { data: number[] }) {
   const labels = ["M", "T", "W", "T", "F", "S", "S"];
   const w = 320;
   const h = 130;
   const pad = 16;
   const max = 100;
-  const stepX = (w - pad * 2) / (data.length - 1);
-  const points = data.map((v, i) => {
-    const x = pad + i * stepX;
-    const y = pad + (1 - v / max) * (h - pad * 2);
-    return { x, y, v };
-  });
+  const series = data.length >= 2 ? data : [0, 0, 0, 0, 0, 0, 0];
+  const stepX = (w - pad * 2) / (series.length - 1);
+  const points = series.map((v, i) => ({
+    x: pad + i * stepX,
+    y: pad + (1 - v / max) * (h - pad * 2),
+    v,
+  }));
 
   const path = smoothPath(points);
   const area = `${path} L ${points[points.length - 1].x} ${h - pad} L ${points[0].x} ${h - pad} Z`;
-
   const last = points[points.length - 1];
 
   return (
@@ -398,7 +498,6 @@ function ProgressChart() {
               <stop offset="100%" stopColor="#0D47A1" />
             </linearGradient>
           </defs>
-          {/* grid ticks */}
           {points.slice(0, 7).map((p, i) => (
             <line
               key={i}
@@ -440,7 +539,6 @@ function ProgressChart() {
               transition={{ delay: 0.9 + i * 0.05 }}
             />
           ))}
-          {/* Tooltip on last point */}
           <motion.g
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -455,7 +553,7 @@ function ProgressChart() {
               fontWeight={700}
               fill="white"
             >
-              85%
+              {last.v}%
             </text>
           </motion.g>
         </svg>
@@ -485,69 +583,3 @@ function smoothPath(pts: { x: number; y: number }[]) {
   }
   return d;
 }
-
-/* ---------- Bottom Navigation ---------- */
-
-const tabs = [
-  { key: "home", label: "Home", icon: HomeIcon },
-  { key: "habits", label: "Habits", icon: CheckCircle2 },
-  { key: "workout", label: "Workout", icon: Dumbbell },
-  { key: "study", label: "Study", icon: BookOpen },
-  { key: "profile", label: "Profile", icon: User },
-];
-
-function BottomNav() {
-  const [active, setActive] = useState("home");
-  return (
-    <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-4"
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
-    >
-      <div className="pointer-events-auto w-full max-w-[400px]">
-        <div className="relative flex items-center justify-between rounded-full bg-white/80 backdrop-blur-xl border border-black/[0.05] shadow-[0_10px_30px_rgba(15,23,42,0.10)] px-2 py-2">
-          {tabs.map((t) => {
-            const isActive = active === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActive(t.key)}
-                className="relative flex-1 grid place-items-center py-1.5"
-                aria-label={t.label}
-              >
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.span
-                      layoutId="nav-pill"
-                      className="absolute inset-1 rounded-full bg-gradient-to-b from-[#E3F0FF] to-[#DCE9FF]"
-                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                </AnimatePresence>
-                <motion.div
-                  animate={{ scale: isActive ? 1.05 : 1 }}
-                  className="relative flex flex-col items-center gap-0.5"
-                >
-                  <t.icon
-                    className={`h-[18px] w-[18px] transition-colors ${
-                      isActive ? "text-[#0D47A1]" : "text-slate-400"
-                    }`}
-                  />
-                  <span
-                    className={`text-[10.5px] font-semibold transition-colors ${
-                      isActive ? "text-[#0D47A1]" : "text-slate-400"
-                    }`}
-                  >
-                    {t.label}
-                  </span>
-                </motion.div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Silence unused import warning for Link — reserved for future navigation.
-void Link;
