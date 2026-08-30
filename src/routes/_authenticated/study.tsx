@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, BookOpen, ChevronRight, Check, Timer } from "lucide-react";
+import { Plus, ChevronRight, Check, Timer } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";

@@ -315,7 +315,7 @@ export function useWorkoutExercises(workoutId?: string) {
 /* ---------------- study ---------------- */
 
 export function useStudySubjects() {
-  const { data, loading, refresh, setData } = useAsync<StudySubject[]>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<StudySubject[]>(async () => {
     const { data, error } = await db
       .from("study_subjects")
       .select("*")
@@ -352,11 +352,11 @@ export function useStudySubjects() {
     [setData],
   );
 
-  return { subjects: data ?? [], loading, refresh, create, setProgress };
+  return { subjects: data ?? [], loading, error, refresh, create, setProgress };
 }
 
 export function useStudySessions() {
-  const { data, loading, refresh, setData } = useAsync<StudySession[]>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<StudySession[]>(async () => {
     const { data, error } = await db
       .from("study_sessions")
       .select("*")
@@ -404,7 +404,7 @@ export function useStudySessions() {
     [setData],
   );
 
-  return { sessions: data ?? [], loading, refresh, create, complete };
+  return { sessions: data ?? [], loading, error, refresh, create, complete };
 }
 
 /* ---------------- water ---------------- */
