@@ -1,41 +1,96 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, BookOpen, Cpu, Database, ChevronRight } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, ChevronRight, Check, Timer } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
+import { SheetDialog } from "@/components/common/SheetDialog";
+import { iconFor } from "@/lib/icon-map";
+import {
+  todayISO,
+  useStudySessions,
+  useStudySubjects,
+  usePomodoro,
+  useSettings,
+} from "@/hooks/use-ascend";
+import studyIllustration from "@/assets/study-illustration.png";
+import type { StudySession } from "@/types/models";
 
 export const Route = createFileRoute("/_authenticated/study")({
   head: () => ({
     meta: [
       { title: "Study — ASCEND" },
-      { name: "description", content: "Study plan and subjects." },
+      { name: "description", content: "Study plan, subjects and focus sessions." },
     ],
   }),
   component: StudyPage,
 });
 
 const tabs = ["Plan", "Subjects", "Pomodoro"] as const;
-const subjects = [
-  { icon: BookOpen, name: "Data Structures", progress: 65, tint: "bg-sky-50", fg: "text-sky-500" },
-  {
-    icon: Cpu,
-    name: "Operating Systems",
-    progress: 40,
-    tint: "bg-violet-50",
-    fg: "text-violet-500",
-  },
-  {
-    icon: Database,
-    name: "Database Systems",
-    progress: 30,
-    tint: "bg-emerald-50",
-    fg: "text-emerald-500",
-  },
-];
+
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
 
 function StudyPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Plan");
+  const [open, setOpen] = useState(false);
+
+  const {
+    subjects,
+    loading: subjectsLoading,
+    error: subjectsError,
+    create: createSubject,
+    setProgress,
+  } = useStudySubjects();
+  const {
+    sessions,
+    loading: sessionsLoading,
+    error: sessionsError,
+    create: createSession,
+    complete,
+  } = useStudySessions();
+  const { completedToday, focusMinutesToday } = usePomodoro();
+  const { settings } = useSettings();
+
+  /* today's sessions */
+  const today = todayISO();
+  const todaysSessions = useMemo(
+    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === today),
+    [sessions, today],
+  );
+  const next = todaysSessions.find((s) => !s.completed) ?? null;
+
+  /* running session timer (client-side, persisted on complete) */
+  const [active, setActive] = useState<StudySession | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const tick = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!active) return;
+    tick.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => {
+      if (tick.current) window.clearInterval(tick.current);
+    };
+  }, [active]);
+
+  function start(session: StudySession) {
+    setActive(session);
+    setElapsed(0);
+  }
+
+  async function finish() {
+    if (!active) return;
+    const minutes = Math.max(1, Math.round(elapsed / 60));
+    await complete(active, minutes);
+    setActive(null);
+    setElapsed(0);
+  }
+
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
+
   return (
     <PhoneFrame>
       <div className="relative flex-1 bg-[#F7F8FC] pb-28">
@@ -54,57 +109,247 @@ function StudyPage() {
             ))}
           </div>
 
-          <div>
-            <p className="text-[13px] font-semibold text-slate-500 mb-2">Today's Study Plan</p>
-            <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#E3F0FF] to-[#F5F9FF] p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.08)]">
-              <div className="relative z-10 max-w-[65%]">
-                <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
-                  Data Structures
-                </h3>
-                <p className="text-[13px] text-slate-500 mt-1">2:00 PM - 4:00 PM</p>
-                <button className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition">
-                  Start Session
-                </button>
-              </div>
-              <div className="absolute -right-2 bottom-2 grid place-items-center">
-                <BookOpen className="h-20 w-20 text-[#0D47A1]/20" strokeWidth={1.5} />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[13px] font-semibold text-slate-500 mb-3">Subjects</p>
-            <div className="space-y-2.5">
-              {subjects.map((s) => (
-                <div
-                  key={s.name}
-                  className="flex items-center gap-3 rounded-[20px] bg-white p-3.5 border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
-                >
-                  <div
-                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${s.tint}`}
-                  >
-                    <s.icon className={`h-5 w-5 ${s.fg}`} />
+          {tab === "Plan" && (
+            <>
+              <div>
+                <p className="text-[13px] font-semibold text-slate-500 mb-2">Today's Study Plan</p>
+                <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#E3F0FF] to-[#F5F9FF] p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.08)]">
+                  <div className="relative z-10 max-w-[65%]">
+                    {sessionsLoading ? (
+                      <p className="text-[13px] text-slate-500">Loading your plan…</p>
+                    ) : active ? (
+                      <>
+                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                          {active.subject}
+                        </h3>
+                        <p className="text-[13px] text-slate-500 mt-1 tabular-nums">
+                          In progress · {mm}:{ss}
+                        </p>
+                        <button
+                          onClick={() => void finish()}
+                          className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+                        >
+                          Complete Session
+                        </button>
+                      </>
+                    ) : next ? (
+                      <>
+                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                          {next.subject}
+                        </h3>
+                        <p className="text-[13px] text-slate-500 mt-1">
+                          {fmtTime(next.started_at)}
+                          {next.topic ? ` · ${next.topic}` : ""}
+                        </p>
+                        <button
+                          onClick={() => start(next)}
+                          className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+                        >
+                          Start Session
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                          No session planned
+                        </h3>
+                        <p className="text-[13px] text-slate-500 mt-1">
+                          Tap + to schedule your next study block.
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold text-slate-900 truncate">{s.name}</p>
-                    <p className="text-[12px] text-slate-500">Progress {s.progress}%</p>
-                    <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#42A5F5] to-[#0D47A1]"
-                        style={{ width: `${s.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <img
+                    src={studyIllustration}
+                    alt="Student studying"
+                    className="pointer-events-none absolute -right-3 bottom-0 h-28 w-28 object-contain opacity-90"
+                  />
                 </div>
-              ))}
+              </div>
+
+              <div>
+                <p className="text-[13px] font-semibold text-slate-500 mb-3">Today's Sessions</p>
+                {sessionsError && (
+                  <p className="text-[13px] text-rose-500">Couldn't load sessions.</p>
+                )}
+                {!sessionsLoading && !sessionsError && todaysSessions.length === 0 && (
+                  <p className="text-[13px] text-slate-400">
+                    No sessions today — tap + to add one.
+                  </p>
+                )}
+                <div className="space-y-2.5">
+                  {todaysSessions.map((s, i) => {
+                    const look = iconFor(null, "book");
+                    const Icon = look.icon;
+                    return (
+                      <motion.div
+                        key={s.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="flex items-center gap-3 rounded-[20px] bg-white p-3.5 border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
+                      >
+                        <div
+                          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${look.tint}`}
+                        >
+                          <Icon className={`h-5 w-5 ${look.fg}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[15px] font-semibold text-slate-900 truncate">
+                            {s.subject}
+                          </p>
+                          <p className="text-[12px] text-slate-500 truncate">
+                            {fmtTime(s.started_at)}
+                            {s.duration_min ? ` · ${s.duration_min} min` : ""}
+                          </p>
+                        </div>
+                        {s.completed ? (
+                          <div className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white">
+                            <Check className="h-4 w-4" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => start(s)}
+                            className="rounded-full bg-[#0D47A1]/[0.06] text-[#0D47A1] text-[12px] font-semibold px-3.5 py-1.5"
+                          >
+                            Start
+                          </button>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "Subjects" && (
+            <div>
+              <p className="text-[13px] font-semibold text-slate-500 mb-3">Subjects</p>
+              {subjectsLoading && <p className="text-[13px] text-slate-400">Loading subjects…</p>}
+              {subjectsError && <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>}
+              {!subjectsLoading && !subjectsError && subjects.length === 0 && (
+                <p className="text-[13px] text-slate-400">
+                  No subjects yet — tap + to add your first one.
+                </p>
+              )}
+              <div className="space-y-2.5">
+                {subjects.map((s, i) => {
+                  const look = iconFor(s.icon, "book");
+                  const Icon = look.icon;
+                  return (
+                    <motion.button
+                      key={s.id}
+                      type="button"
+                      onClick={() => void setProgress(s, (s.progress ?? 0) + 10)}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="w-full text-left flex items-center gap-3 rounded-[20px] bg-white p-3.5 border border-black/[0.03] shadow-[0_4px_18px_rgba(15,23,42,0.04)]"
+                    >
+                      <div
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${look.tint}`}
+                      >
+                        <Icon className={`h-5 w-5 ${look.fg}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-semibold text-slate-900 truncate">
+                          {s.name}
+                        </p>
+                        <p className="text-[12px] text-slate-500">Progress {s.progress ?? 0}%</p>
+                        <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-[#42A5F5] to-[#0D47A1]"
+                            style={{ width: `${s.progress ?? 0}%` }}
+                          />
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {tab === "Pomodoro" && (
+            <div className="space-y-4">
+              <div className="rounded-[24px] bg-white p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.06)]">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50">
+                    <Timer className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-semibold text-slate-900">Focus today</p>
+                    <p className="text-[12.5px] text-slate-500">
+                      {completedToday} sessions · {focusMinutesToday} min
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 text-[12.5px] text-slate-500">
+                  Current preset: {settings.focus_min} min focus / {settings.break_min} min break.
+                </p>
+                <Link
+                  to="/pomodoro"
+                  className="mt-4 inline-flex rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+                >
+                  Open Pomodoro
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
-        <button className="fixed bottom-24 right-6 z-10 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] text-white shadow-[0_10px_30px_-6px_rgba(25,118,210,0.6)] active:scale-95 transition">
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-24 right-6 z-10 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] text-white shadow-[0_10px_30px_-6px_rgba(25,118,210,0.6)] active:scale-95 transition"
+        >
           <Plus className="h-6 w-6" strokeWidth={2.5} />
         </button>
+
+        {tab === "Subjects" ? (
+          <SheetDialog
+            open={open}
+            onClose={() => setOpen(false)}
+            title="New Subject"
+            submitLabel="Add Subject"
+            withIconPicker
+            fields={[{ name: "name", label: "Subject name", placeholder: "Data Structures" }]}
+            onSubmit={(v, icon) => createSubject(v.name.trim(), icon)}
+          />
+        ) : (
+          <SheetDialog
+            open={open}
+            onClose={() => setOpen(false)}
+            title="New Study Session"
+            submitLabel="Add Session"
+            fields={[
+              { name: "subject", label: "Subject", placeholder: "Data Structures" },
+              { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
+              { name: "time", label: "Start time", type: "time", required: false },
+              {
+                name: "duration_min",
+                label: "Planned minutes",
+                type: "number",
+                placeholder: "60",
+                required: false,
+              },
+            ]}
+            onSubmit={async (v) => {
+              const started = v.time
+                ? new Date(`${todayISO()}T${v.time}:00`).toISOString()
+                : new Date().toISOString();
+              await createSession({
+                subject: v.subject.trim(),
+                topic: v.topic?.trim() || undefined,
+                duration_min: v.duration_min ? Number(v.duration_min) : undefined,
+                started_at: started,
+                completed: false,
+              });
+            }}
+          />
+        )}
+
         <BottomNav />
       </div>
     </PhoneFrame>
