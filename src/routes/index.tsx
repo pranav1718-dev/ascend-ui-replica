@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
-import splashAsset from "@/assets/splash.jpeg.asset.json";
+import splashAsset from "@/assets/splash.jpeg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,7 +27,7 @@ function Splash() {
     <PhoneFrame>
       <div className="flex-1 bg-white overflow-hidden">
         <img
-          src={splashAsset.url}
+          src={splashAsset}
           alt="ASCEND — Be Better. Every Day."
           className="w-full h-full object-cover object-center select-none"
           draggable={false}

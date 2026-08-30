@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
-import onboardingAsset from "@/assets/onboarding.jpeg.asset.json";
+import onboardingAsset from "@/assets/onboarding.jpeg";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -22,7 +22,7 @@ function Onboarding() {
     <PhoneFrame>
       <div className="relative flex-1 bg-white overflow-hidden">
         <img
-          src={onboardingAsset.url}
+          src={onboardingAsset}
           alt="Your Journey to Best Version of You"
           className="w-full h-full object-cover object-top select-none"
           draggable={false}
