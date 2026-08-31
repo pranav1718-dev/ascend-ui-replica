@@ -22,11 +22,11 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 const items: { icon: typeof UserPen; label: string; to?: string }[] = [
-  { icon: UserPen, label: "Edit Profile" },
-  { icon: Bell, label: "Reminders" },
-  { icon: Palette, label: "Theme" },
+  { icon: UserPen, label: "Edit Profile", to: "/profile" },
+  { icon: Bell, label: "Reminders", to: "/reminders" },
+  { icon: Palette, label: "Theme", to: "/theme" },
   { icon: SettingsIcon, label: "Settings", to: "/settings" },
-  { icon: LifeBuoy, label: "Help & Support" },
+  { icon: LifeBuoy, label: "Help & Support", to: "/help" },
 ];
 
 function ProfilePage() {

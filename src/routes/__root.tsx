@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -119,11 +120,74 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function ThemeManager() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const applyTheme = (theme: "light" | "dark" | "system") => {
+      const isDark = theme === "dark" || (theme === "system" && media.matches);
+      root.classList.toggle("dark", isDark);
+      root.dataset.theme = theme;
+      root.style.colorScheme = isDark ? "dark" : "light";
+    };
+
+    const syncTheme = async () => {
+      if (!supabase) {
+        applyTheme("light");
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        applyTheme("light");
+        return;
+      }
+
+      const { data } = await supabase
+        .from("user_settings")
+        .select("theme")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      applyTheme((data?.theme as "light" | "dark" | "system") ?? "light");
+    };
+
+    void syncTheme();
+
+    const handleSystemChange = () => {
+      const currentTheme = (root.dataset.theme as "light" | "dark" | "system") ?? "light";
+      if (currentTheme === "system") {
+        applyTheme("system");
+      }
+    };
+
+    media.addEventListener("change", handleSystemChange);
+    const { data: authSubscription } = supabase?.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        applyTheme("light");
+        return;
+      }
+      void syncTheme();
+    }) ?? { data: null };
+
+    return () => {
+      media.removeEventListener("change", handleSystemChange);
+      authSubscription?.subscription.unsubscribe();
+    };
+  }, []);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeManager />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>

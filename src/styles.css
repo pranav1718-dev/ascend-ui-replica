@@ -60,6 +60,82 @@
   --brand-blue: #1976D2;
 }
 
+.dark {
+  --background: oklch(0.14 0.03 255);
+  --foreground: oklch(0.96 0.02 255);
+  --card: oklch(0.17 0.03 255);
+  --card-foreground: oklch(0.96 0.02 255);
+  --popover: oklch(0.17 0.03 255);
+  --popover-foreground: oklch(0.96 0.02 255);
+  --primary: #0D47A1;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.22 0.03 255);
+  --secondary-foreground: oklch(0.96 0.02 255);
+  --muted: oklch(0.22 0.03 255);
+  --muted-foreground: oklch(0.72 0.03 255);
+  --accent: oklch(0.22 0.03 255);
+  --accent-foreground: oklch(0.96 0.02 255);
+  --destructive: oklch(0.7 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.28 0.03 255);
+  --input: oklch(0.28 0.03 255);
+  --ring: oklch(0.72 0.12 255);
+  --brand-blue: #8AB4FF;
+}
+
+.dark {
+  --panel-bg: #111827;
+  --panel-alt: #0f172a;
+  --panel-soft: #1f2937;
+  --panel-line: rgba(148, 163, 184, 0.22);
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+.dark body,
+.dark #root,
+.dark .bg-\[\#F7F8FC\],
+.dark [class*="bg-white"],
+.dark [class*="bg-slate-50"],
+.dark [class*="bg-slate-100"] {
+  background-color: var(--panel-bg) !important;
+}
+
+.dark [class*="text-slate-900"],
+.dark [class*="text-slate-800"],
+.dark [class*="text-slate-700"],
+.dark [class*="text-slate-600"],
+.dark [class*="text-slate-500"],
+.dark [class*="text-slate-400"] {
+  color: var(--text-primary) !important;
+}
+
+.dark [class*="border-black"],
+.dark [class*="border-slate-200"],
+.dark [class*="border-slate-50"],
+.dark [class*="border-slate-100"] {
+  border-color: var(--panel-line) !important;
+}
+
+.dark [class*="bg-slate-50"],
+.dark [class*="bg-slate-100"] {
+  background-color: var(--panel-soft) !important;
+}
+
+.dark [class*="bg-white"] {
+  background-color: var(--panel-alt) !important;
+}
+
+.dark [class*="text-slate-500"],
+.dark [class*="text-slate-400"] {
+  color: var(--text-muted) !important;
+}
+
+.dark [class*="shadow-\[0_8px_30px_rgba\(13,71,161,0.06\)\]"] {
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.52) !important;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
