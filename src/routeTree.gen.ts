@@ -9,11 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThemeRouteImport } from './routes/theme'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RemindersRouteImport } from './routes/reminders'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,6 +37,16 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 
+const ThemeRoute = ThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -40,6 +55,16 @@ const SignupRoute = SignupRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RemindersRoute = RemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -55,6 +80,11 @@ const McpRoute = McpRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -148,11 +178,16 @@ const Char91DotmcpChar93InvokeToolToolRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/reminders': typeof RemindersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
+  '/theme': typeof ThemeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
@@ -171,11 +206,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/reminders': typeof RemindersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
+  '/theme': typeof ThemeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
@@ -196,11 +236,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/reminders': typeof RemindersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
+  '/theme': typeof ThemeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
@@ -221,11 +266,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/forgot-password'
+    | '/help'
     | '/login'
     | '/mcp'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/reminders'
     | '/reset-password'
     | '/signup'
+    | '/terms'
+    | '/theme'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/analytics'
@@ -244,11 +294,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/forgot-password'
+    | '/help'
     | '/login'
     | '/mcp'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/reminders'
     | '/reset-password'
     | '/signup'
+    | '/terms'
+    | '/theme'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/analytics'
@@ -268,11 +323,16 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/forgot-password'
+    | '/help'
     | '/login'
     | '/mcp'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/reminders'
     | '/reset-password'
     | '/signup'
+    | '/terms'
+    | '/theme'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/analytics'
@@ -293,11 +353,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  HelpRoute: typeof HelpRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RemindersRoute: typeof RemindersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
+  ThemeRoute: typeof ThemeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -305,6 +370,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/theme': {
+      id: '/theme'
+      path: '/theme'
+      fullPath: '/theme'
+      preLoaderRoute: typeof ThemeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -317,6 +396,20 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reminders': {
+      id: '/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof RemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -338,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -497,11 +597,16 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  HelpRoute: HelpRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
   OnboardingRoute: OnboardingRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RemindersRoute: RemindersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
+  ThemeRoute: ThemeRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
