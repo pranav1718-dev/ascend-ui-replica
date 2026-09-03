@@ -383,19 +383,23 @@ export function useStudySubjects() {
     return (data as StudySubject[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (name: string, icon: string) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("study_subjects")
-        .insert({ user_id, name, icon } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), row as StudySubject]);
-    },
-    [setData],
+    async (name: string, icon: string) =>
+      guard(`create:${name}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("study_subjects")
+          .insert({ user_id, name, icon } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), row as StudySubject]);
+      }),
+    [guard, setData],
   );
+
 
   const setProgress = useCallback(
     async (subject: StudySubject, progress: number) => {
