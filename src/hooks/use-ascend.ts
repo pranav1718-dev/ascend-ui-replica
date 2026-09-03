@@ -326,38 +326,46 @@ export function useWorkoutExercises(workoutId?: string) {
     return (data as WorkoutExercise[]) ?? [];
   }, [workoutId]);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (input: { name: string; sets?: number; reps?: number; muscle?: string }) => {
-      if (!workoutId) return;
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("workout_exercises")
-        .insert({
-          user_id,
-          workout_id: workoutId,
-          position: (data?.length ?? 0) + 1,
-          ...input,
-        } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), row as WorkoutExercise]);
-    },
-    [workoutId, data, setData],
+    async (input: { name: string; sets?: number; reps?: number; muscle?: string }) =>
+      guard(`create:${input.name}`, async () => {
+        if (!workoutId) return;
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("workout_exercises")
+          .insert({
+            user_id,
+            workout_id: workoutId,
+            position: (data?.length ?? 0) + 1,
+            ...input,
+          } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), row as WorkoutExercise]);
+      }),
+    [guard, workoutId, data, setData],
   );
 
   const toggle = useCallback(
-    async (ex: WorkoutExercise) => {
-      const completed = !ex.completed;
-      setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? { ...e, completed } : e)));
-      const { error } = await db
-        .from("workout_exercises")
-        .update({ completed } as never)
-        .eq("id", ex.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (ex: WorkoutExercise) =>
+      guard(`toggle:${ex.id}`, async () => {
+        const completed = !ex.completed;
+        setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? { ...e, completed } : e)));
+        const { error } = await db
+          .from("workout_exercises")
+          .update({ completed } as never)
+          .eq("id", ex.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? ex : e)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
+
 
   return { exercises: data ?? [], loading, refresh, create, toggle };
 }
