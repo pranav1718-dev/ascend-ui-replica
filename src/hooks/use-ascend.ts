@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@/services/db";
 import { authService } from "@/services/auth";
 import type {
@@ -30,6 +30,23 @@ export function lastNDays(n: number): string[] {
     out.push(todayISO(d));
   }
   return out;
+}
+
+/**
+ * Guards against duplicate concurrent mutations (rapid double taps).
+ * Calls with a key already in flight are ignored.
+ */
+function useInFlight() {
+  const ref = useRef<Set<string>>(new Set());
+  return useCallback(async <T>(key: string, fn: () => Promise<T>): Promise<T | undefined> => {
+    if (ref.current.has(key)) return undefined;
+    ref.current.add(key);
+    try {
+      return await fn();
+    } finally {
+      ref.current.delete(key);
+    }
+  }, []);
 }
 
 function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
