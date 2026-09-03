@@ -429,6 +429,8 @@ export function useStudySessions() {
     return (data as StudySession[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
     async (input: {
       subject: string;
@@ -436,35 +438,41 @@ export function useStudySessions() {
       duration_min?: number;
       started_at?: string;
       completed?: boolean;
-    }) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("study_sessions")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [row as StudySession, ...(prev ?? [])]);
-      return row as StudySession;
-    },
-    [setData],
+    }) =>
+      guard(`create:${input.subject}:${input.topic ?? ""}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("study_sessions")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [row as StudySession, ...(prev ?? [])]);
+        return row as StudySession;
+      }),
+    [guard, setData],
   );
 
   const complete = useCallback(
-    async (session: StudySession, duration_min: number) => {
-      setData((prev) =>
-        (prev ?? []).map((s) =>
-          s.id === session.id ? { ...s, completed: true, duration_min } : s,
-        ),
-      );
-      const { error } = await db
-        .from("study_sessions")
-        .update({ completed: true, duration_min } as never)
-        .eq("id", session.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (session: StudySession, duration_min: number) =>
+      guard(`complete:${session.id}`, async () => {
+        setData((prev) =>
+          (prev ?? []).map((s) =>
+            s.id === session.id ? { ...s, completed: true, duration_min } : s,
+          ),
+        );
+        const { error } = await db
+          .from("study_sessions")
+          .update({ completed: true, duration_min } as never)
+          .eq("id", session.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((s) => (s.id === session.id ? session : s)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
+
 
   return { sessions: data ?? [], loading, error, refresh, create, complete };
 }
