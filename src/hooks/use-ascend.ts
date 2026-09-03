@@ -126,52 +126,63 @@ export function useHabits() {
     }));
   }, [data]);
 
+  const guard = useInFlight();
+
   const toggle = useCallback(
-    async (habit: Habit) => {
-      const today = todayISO();
-      const done = habit.last_completed_on === today;
-      const yesterday = todayISO(new Date(Date.now() - 86400000));
-      const streak = done
-        ? Math.max(0, habit.streak - 1)
-        : habit.last_completed_on === yesterday
-          ? habit.streak + 1
-          : 1;
-      const patch = {
-        last_completed_on: done ? null : today,
-        completed_today: !done,
-        streak,
-      };
-      setData((prev) =>
-        (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
-      );
-      const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (habit: Habit) =>
+      guard(`toggle:${habit.id}`, async () => {
+        const today = todayISO();
+        const done = habit.last_completed_on === today;
+        const yesterday = todayISO(new Date(Date.now() - 86400000));
+        const streak = done
+          ? Math.max(0, habit.streak - 1)
+          : habit.last_completed_on === yesterday
+            ? habit.streak + 1
+            : 1;
+        const patch = {
+          last_completed_on: done ? null : today,
+          completed_today: !done,
+          streak,
+        };
+        setData((prev) =>
+          (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
+        );
+        const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
+        if (error) {
+          // roll back the optimistic update so the UI reflects the database
+          setData((prev) => (prev ?? []).map((h) => (h.id === habit.id ? habit : h)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
 
   const create = useCallback(
-    async (name: string, icon: string) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("habits")
-        .insert({ user_id, name, icon } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), data as Habit]);
-    },
-    [setData],
+    async (name: string, icon: string) =>
+      guard(`create:${name}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("habits")
+          .insert({ user_id, name, icon } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), data as Habit]);
+      }),
+    [guard, setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((h) => h.id !== id));
-      const { error } = await db.from("habits").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("habits").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((h) => h.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   const doneCount = habits.filter((h) => h.completed_today).length;
   return { habits, loading, refresh, toggle, create, remove, doneCount, total: habits.length };
