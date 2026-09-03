@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Check, Flame } from "lucide-react";
+import { Search, Plus, Check, Flame, Trash2 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useHabits } from "@/hooks/use-ascend";
+import type { Habit } from "@/types/models";
 import { iconFor } from "@/lib/icon-map";
 
 export const Route = createFileRoute("/_authenticated/habits")({
@@ -38,7 +40,8 @@ function useWeek() {
 
 function HabitsPage() {
   const days = useWeek();
-  const { habits, loading, toggle, create, doneCount, total } = useHabits();
+  const { habits, loading, toggle, create, remove, doneCount, total } = useHabits();
+  const [pendingDelete, setPendingDelete] = useState<Habit | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -167,6 +170,20 @@ function HabitsPage() {
           withIconPicker
           fields={[{ name: "name", label: "Habit name", placeholder: "Drink 3L water" }]}
           onSubmit={(v, icon) => create(v.name.trim(), icon)}
+        />
+
+        <ConfirmDialog
+          open={pendingDelete !== null}
+          title="Delete habit?"
+          message={
+            pendingDelete
+              ? `"${pendingDelete.name}" and its streak will be permanently removed.`
+              : undefined
+          }
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={async () => {
+            if (pendingDelete) await remove(pendingDelete.id);
+          }}
         />
         <BottomNav />
       </div>
