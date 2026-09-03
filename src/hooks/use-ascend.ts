@@ -201,18 +201,21 @@ export function useGoals() {
     return (data as Goal[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (input: { title: string; description?: string; target_date?: string | null }) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("goals")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [data as Goal, ...(prev ?? [])]);
-    },
-    [setData],
+    async (input: { title: string; description?: string; target_date?: string | null }) =>
+      guard(`create:${input.title}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("goals")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [data as Goal, ...(prev ?? [])]);
+      }),
+    [guard, setData],
   );
 
   const setProgress = useCallback(
@@ -221,19 +224,25 @@ export function useGoals() {
       const patch = { progress: p, status: p >= 100 ? "completed" : "active" } as const;
       setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? { ...g, ...patch } : g)));
       const { error } = await db.from("goals").update(patch as never).eq("id", goal.id);
-      if (error) throw error;
+      if (error) {
+        setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? goal : g)));
+        throw error;
+      }
     },
     [setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((g) => g.id !== id));
-      const { error } = await db.from("goals").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("goals").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((g) => g.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   return { goals: data ?? [], loading, refresh, create, setProgress, remove };
 }
