@@ -496,6 +496,10 @@ export function useWater() {
   const glasses = data?.glasses ?? 0;
   const goal = data?.goal_glasses ?? 8;
 
+  // Writes are serialised so rapid taps cannot race each other; the last
+  // value always wins and no duplicate rows are created.
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+
   const setGlasses = useCallback(
     async (next: number) => {
       const value = Math.max(0, next);
@@ -504,15 +508,21 @@ export function useWater() {
           ? { ...prev, glasses: value }
           : ({ glasses: value, goal_glasses: 8, log_date: todayISO() } as WaterTracking),
       );
-      const row = await db.upsert<WaterTracking>(
-        "water_tracking",
-        { log_date: todayISO(), glasses: value },
-        "user_id,log_date",
-      );
-      setData(row);
+      chain.current = chain.current
+        .catch(() => undefined)
+        .then(async () => {
+          const row = await db.upsert<WaterTracking>(
+            "water_tracking",
+            { log_date: todayISO(), glasses: value },
+            "user_id,log_date",
+          );
+          setData(row);
+        });
+      return chain.current as Promise<void>;
     },
     [setData],
   );
+
 
   return { glasses, goal, loading, refresh, setGlasses };
 }
