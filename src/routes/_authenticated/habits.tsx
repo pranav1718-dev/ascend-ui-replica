@@ -105,37 +105,50 @@ function HabitsPage() {
               const look = iconFor(h.icon, "sparkles");
               const Icon = look.icon;
               return (
-                <motion.button
-                  type="button"
-                  onClick={() => void toggle(h)}
+                <motion.div
                   key={h.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                   className="w-full text-left flex items-center gap-3 rounded-[20px] bg-white p-3.5 shadow-[0_4px_18px_rgba(15,23,42,0.04)] border border-black/[0.03]"
                 >
-                  <div
-                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${look.tint}`}
+                  <button
+                    type="button"
+                    onClick={() => void toggle(h)}
+                    className="flex flex-1 min-w-0 items-center gap-3 text-left"
                   >
-                    <Icon className={`h-5 w-5 ${look.fg}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold text-slate-900 truncate">{h.name}</p>
-                    <p className="text-[12.5px] text-slate-500 truncate inline-flex items-center gap-1">
-                      <Flame className="h-3.5 w-3.5 text-orange-400" />
-                      {h.streak} day streak
-                    </p>
-                  </div>
-                  {h.completed_today ? (
-                    <div className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white">
-                      <Check className="h-4 w-4" strokeWidth={3} />
+                    <div
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${look.tint}`}
+                    >
+                      <Icon className={`h-5 w-5 ${look.fg}`} />
                     </div>
-                  ) : (
-                    <div className="h-7 w-7 rounded-full border-2 border-slate-200" />
-                  )}
-                </motion.button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[15px] font-semibold text-slate-900 truncate">{h.name}</p>
+                      <p className="text-[12.5px] text-slate-500 truncate inline-flex items-center gap-1">
+                        <Flame className="h-3.5 w-3.5 text-orange-400" />
+                        {h.streak} day streak
+                      </p>
+                    </div>
+                    {h.completed_today ? (
+                      <div className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white">
+                        <Check className="h-4 w-4" strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div className="h-7 w-7 rounded-full border-2 border-slate-200" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${h.name}`}
+                    onClick={() => setPendingDelete(h)}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-slate-50 active:scale-95 transition"
+                  >
+                    <Trash2 className="h-4 w-4 text-slate-400" />
+                  </button>
+                </motion.div>
               );
             })}
+
           </div>
         </div>
 
