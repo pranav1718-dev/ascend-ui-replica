@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "@/services/db";
 import { authService } from "@/services/auth";
 import type {
@@ -30,6 +30,23 @@ export function lastNDays(n: number): string[] {
     out.push(todayISO(d));
   }
   return out;
+}
+
+/**
+ * Guards against duplicate concurrent mutations (rapid double taps).
+ * Calls with a key already in flight are ignored.
+ */
+function useInFlight() {
+  const ref = useRef<Set<string>>(new Set());
+  return useCallback(async <T>(key: string, fn: () => Promise<T>): Promise<T | undefined> => {
+    if (ref.current.has(key)) return undefined;
+    ref.current.add(key);
+    try {
+      return await fn();
+    } finally {
+      ref.current.delete(key);
+    }
+  }, []);
 }
 
 function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
@@ -109,52 +126,63 @@ export function useHabits() {
     }));
   }, [data]);
 
+  const guard = useInFlight();
+
   const toggle = useCallback(
-    async (habit: Habit) => {
-      const today = todayISO();
-      const done = habit.last_completed_on === today;
-      const yesterday = todayISO(new Date(Date.now() - 86400000));
-      const streak = done
-        ? Math.max(0, habit.streak - 1)
-        : habit.last_completed_on === yesterday
-          ? habit.streak + 1
-          : 1;
-      const patch = {
-        last_completed_on: done ? null : today,
-        completed_today: !done,
-        streak,
-      };
-      setData((prev) =>
-        (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
-      );
-      const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (habit: Habit) =>
+      guard(`toggle:${habit.id}`, async () => {
+        const today = todayISO();
+        const done = habit.last_completed_on === today;
+        const yesterday = todayISO(new Date(Date.now() - 86400000));
+        const streak = done
+          ? Math.max(0, habit.streak - 1)
+          : habit.last_completed_on === yesterday
+            ? habit.streak + 1
+            : 1;
+        const patch = {
+          last_completed_on: done ? null : today,
+          completed_today: !done,
+          streak,
+        };
+        setData((prev) =>
+          (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
+        );
+        const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
+        if (error) {
+          // roll back the optimistic update so the UI reflects the database
+          setData((prev) => (prev ?? []).map((h) => (h.id === habit.id ? habit : h)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
 
   const create = useCallback(
-    async (name: string, icon: string) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("habits")
-        .insert({ user_id, name, icon } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), data as Habit]);
-    },
-    [setData],
+    async (name: string, icon: string) =>
+      guard(`create:${name}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("habits")
+          .insert({ user_id, name, icon } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), data as Habit]);
+      }),
+    [guard, setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((h) => h.id !== id));
-      const { error } = await db.from("habits").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("habits").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((h) => h.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   const doneCount = habits.filter((h) => h.completed_today).length;
   return { habits, loading, refresh, toggle, create, remove, doneCount, total: habits.length };
@@ -173,18 +201,21 @@ export function useGoals() {
     return (data as Goal[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (input: { title: string; description?: string; target_date?: string | null }) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("goals")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [data as Goal, ...(prev ?? [])]);
-    },
-    [setData],
+    async (input: { title: string; description?: string; target_date?: string | null }) =>
+      guard(`create:${input.title}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("goals")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [data as Goal, ...(prev ?? [])]);
+      }),
+    [guard, setData],
   );
 
   const setProgress = useCallback(
@@ -193,19 +224,25 @@ export function useGoals() {
       const patch = { progress: p, status: p >= 100 ? "completed" : "active" } as const;
       setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? { ...g, ...patch } : g)));
       const { error } = await db.from("goals").update(patch as never).eq("id", goal.id);
-      if (error) throw error;
+      if (error) {
+        setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? goal : g)));
+        throw error;
+      }
     },
     [setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((g) => g.id !== id));
-      const { error } = await db.from("goals").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("goals").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((g) => g.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   return { goals: data ?? [], loading, refresh, create, setProgress, remove };
 }
@@ -223,43 +260,56 @@ export function useWorkouts() {
     return (data as Workout[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
     async (input: {
       name: string;
       category?: string;
       duration_min?: number;
       scheduled_at?: string | null;
-    }) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("workouts")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), data as Workout]);
-      return data as Workout;
-    },
-    [setData],
+    }) =>
+      guard(`create:${input.name}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("workouts")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), data as Workout]);
+        return data as Workout;
+      }),
+    [guard, setData],
   );
 
   const complete = useCallback(
-    async (workout: Workout, completed = true) => {
-      setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? { ...w, completed } : w)));
-      const { error } = await db.from("workouts").update({ completed } as never).eq("id", workout.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (workout: Workout, completed = true) =>
+      guard(`complete:${workout.id}`, async () => {
+        setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? { ...w, completed } : w)));
+        const { error } = await db
+          .from("workouts")
+          .update({ completed } as never)
+          .eq("id", workout.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? workout : w)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((w) => w.id !== id));
-      const { error } = await db.from("workouts").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("workouts").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((w) => w.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   return { workouts: data ?? [], loading, refresh, create, complete, remove };
 }
@@ -276,38 +326,46 @@ export function useWorkoutExercises(workoutId?: string) {
     return (data as WorkoutExercise[]) ?? [];
   }, [workoutId]);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (input: { name: string; sets?: number; reps?: number; muscle?: string }) => {
-      if (!workoutId) return;
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("workout_exercises")
-        .insert({
-          user_id,
-          workout_id: workoutId,
-          position: (data?.length ?? 0) + 1,
-          ...input,
-        } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), row as WorkoutExercise]);
-    },
-    [workoutId, data, setData],
+    async (input: { name: string; sets?: number; reps?: number; muscle?: string }) =>
+      guard(`create:${input.name}`, async () => {
+        if (!workoutId) return;
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("workout_exercises")
+          .insert({
+            user_id,
+            workout_id: workoutId,
+            position: (data?.length ?? 0) + 1,
+            ...input,
+          } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), row as WorkoutExercise]);
+      }),
+    [guard, workoutId, data, setData],
   );
 
   const toggle = useCallback(
-    async (ex: WorkoutExercise) => {
-      const completed = !ex.completed;
-      setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? { ...e, completed } : e)));
-      const { error } = await db
-        .from("workout_exercises")
-        .update({ completed } as never)
-        .eq("id", ex.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (ex: WorkoutExercise) =>
+      guard(`toggle:${ex.id}`, async () => {
+        const completed = !ex.completed;
+        setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? { ...e, completed } : e)));
+        const { error } = await db
+          .from("workout_exercises")
+          .update({ completed } as never)
+          .eq("id", ex.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((e) => (e.id === ex.id ? ex : e)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
+
 
   return { exercises: data ?? [], loading, refresh, create, toggle };
 }
@@ -325,19 +383,23 @@ export function useStudySubjects() {
     return (data as StudySubject[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
-    async (name: string, icon: string) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("study_subjects")
-        .insert({ user_id, name, icon } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), row as StudySubject]);
-    },
-    [setData],
+    async (name: string, icon: string) =>
+      guard(`create:${name}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("study_subjects")
+          .insert({ user_id, name, icon } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), row as StudySubject]);
+      }),
+    [guard, setData],
   );
+
 
   const setProgress = useCallback(
     async (subject: StudySubject, progress: number) => {
@@ -367,6 +429,8 @@ export function useStudySessions() {
     return (data as StudySession[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
     async (input: {
       subject: string;
@@ -374,35 +438,41 @@ export function useStudySessions() {
       duration_min?: number;
       started_at?: string;
       completed?: boolean;
-    }) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("study_sessions")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [row as StudySession, ...(prev ?? [])]);
-      return row as StudySession;
-    },
-    [setData],
+    }) =>
+      guard(`create:${input.subject}:${input.topic ?? ""}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("study_sessions")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [row as StudySession, ...(prev ?? [])]);
+        return row as StudySession;
+      }),
+    [guard, setData],
   );
 
   const complete = useCallback(
-    async (session: StudySession, duration_min: number) => {
-      setData((prev) =>
-        (prev ?? []).map((s) =>
-          s.id === session.id ? { ...s, completed: true, duration_min } : s,
-        ),
-      );
-      const { error } = await db
-        .from("study_sessions")
-        .update({ completed: true, duration_min } as never)
-        .eq("id", session.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (session: StudySession, duration_min: number) =>
+      guard(`complete:${session.id}`, async () => {
+        setData((prev) =>
+          (prev ?? []).map((s) =>
+            s.id === session.id ? { ...s, completed: true, duration_min } : s,
+          ),
+        );
+        const { error } = await db
+          .from("study_sessions")
+          .update({ completed: true, duration_min } as never)
+          .eq("id", session.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((s) => (s.id === session.id ? session : s)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
+
 
   return { sessions: data ?? [], loading, error, refresh, create, complete };
 }
@@ -426,6 +496,10 @@ export function useWater() {
   const glasses = data?.glasses ?? 0;
   const goal = data?.goal_glasses ?? 8;
 
+  // Writes are serialised so rapid taps cannot race each other; the last
+  // value always wins and no duplicate rows are created.
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+
   const setGlasses = useCallback(
     async (next: number) => {
       const value = Math.max(0, next);
@@ -434,15 +508,21 @@ export function useWater() {
           ? { ...prev, glasses: value }
           : ({ glasses: value, goal_glasses: 8, log_date: todayISO() } as WaterTracking),
       );
-      const row = await db.upsert<WaterTracking>(
-        "water_tracking",
-        { log_date: todayISO(), glasses: value },
-        "user_id,log_date",
-      );
-      setData(row);
+      chain.current = chain.current
+        .catch(() => undefined)
+        .then(async () => {
+          const row = await db.upsert<WaterTracking>(
+            "water_tracking",
+            { log_date: todayISO(), glasses: value },
+            "user_id,log_date",
+          );
+          setData(row);
+        });
+      return chain.current as Promise<void>;
     },
     [setData],
   );
+
 
   return { glasses, goal, loading, refresh, setGlasses };
 }
@@ -462,25 +542,29 @@ export function usePomodoro() {
     return (data as PomodoroSession[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const record = useCallback(
-    async (input: { focus_min: number; break_min: number; label?: string }) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("pomodoro_sessions")
-        .insert({
-          user_id,
-          ...input,
-          started_at: new Date(Date.now() - input.focus_min * 60000).toISOString(),
-          ended_at: new Date().toISOString(),
-          completed: true,
-        } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [row as PomodoroSession, ...(prev ?? [])]);
-    },
-    [setData],
+    async (input: { focus_min: number; break_min: number; label?: string }) =>
+      guard(`record:${input.focus_min}:${input.label ?? ""}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("pomodoro_sessions")
+          .insert({
+            user_id,
+            ...input,
+            started_at: new Date(Date.now() - input.focus_min * 60000).toISOString(),
+            ended_at: new Date().toISOString(),
+            completed: true,
+          } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [row as PomodoroSession, ...(prev ?? [])]);
+      }),
+    [guard, setData],
   );
+
 
   const sessions = data ?? [];
   const completedToday = sessions.filter((s) => s.completed).length;
