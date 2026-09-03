@@ -260,43 +260,56 @@ export function useWorkouts() {
     return (data as Workout[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const create = useCallback(
     async (input: {
       name: string;
       category?: string;
       duration_min?: number;
       scheduled_at?: string | null;
-    }) => {
-      const user_id = await db.userId();
-      const { data, error } = await db
-        .from("workouts")
-        .insert({ user_id, ...input } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [...(prev ?? []), data as Workout]);
-      return data as Workout;
-    },
-    [setData],
+    }) =>
+      guard(`create:${input.name}`, async () => {
+        const user_id = await db.userId();
+        const { data, error } = await db
+          .from("workouts")
+          .insert({ user_id, ...input } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [...(prev ?? []), data as Workout]);
+        return data as Workout;
+      }),
+    [guard, setData],
   );
 
   const complete = useCallback(
-    async (workout: Workout, completed = true) => {
-      setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? { ...w, completed } : w)));
-      const { error } = await db.from("workouts").update({ completed } as never).eq("id", workout.id);
-      if (error) throw error;
-    },
-    [setData],
+    async (workout: Workout, completed = true) =>
+      guard(`complete:${workout.id}`, async () => {
+        setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? { ...w, completed } : w)));
+        const { error } = await db
+          .from("workouts")
+          .update({ completed } as never)
+          .eq("id", workout.id);
+        if (error) {
+          setData((prev) => (prev ?? []).map((w) => (w.id === workout.id ? workout : w)));
+          throw error;
+        }
+      }),
+    [guard, setData],
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      setData((prev) => (prev ?? []).filter((w) => w.id !== id));
-      const { error } = await db.from("workouts").delete().eq("id", id);
-      if (error) throw error;
-    },
-    [setData],
+    async (id: string) =>
+      guard(`remove:${id}`, async () => {
+        const userId = await db.userId();
+        const { error } = await db.from("workouts").delete().eq("id", id).eq("user_id", userId);
+        if (error) throw error;
+        setData((prev) => (prev ?? []).filter((w) => w.id !== id));
+      }),
+    [guard, setData],
   );
+
 
   return { workouts: data ?? [], loading, refresh, create, complete, remove };
 }
