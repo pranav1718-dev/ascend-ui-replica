@@ -542,25 +542,29 @@ export function usePomodoro() {
     return (data as PomodoroSession[]) ?? [];
   }, []);
 
+  const guard = useInFlight();
+
   const record = useCallback(
-    async (input: { focus_min: number; break_min: number; label?: string }) => {
-      const user_id = await db.userId();
-      const { data: row, error } = await db
-        .from("pomodoro_sessions")
-        .insert({
-          user_id,
-          ...input,
-          started_at: new Date(Date.now() - input.focus_min * 60000).toISOString(),
-          ended_at: new Date().toISOString(),
-          completed: true,
-        } as never)
-        .select()
-        .single();
-      if (error) throw error;
-      setData((prev) => [row as PomodoroSession, ...(prev ?? [])]);
-    },
-    [setData],
+    async (input: { focus_min: number; break_min: number; label?: string }) =>
+      guard(`record:${input.focus_min}:${input.label ?? ""}`, async () => {
+        const user_id = await db.userId();
+        const { data: row, error } = await db
+          .from("pomodoro_sessions")
+          .insert({
+            user_id,
+            ...input,
+            started_at: new Date(Date.now() - input.focus_min * 60000).toISOString(),
+            ended_at: new Date().toISOString(),
+            completed: true,
+          } as never)
+          .select()
+          .single();
+        if (error) throw error;
+        setData((prev) => [row as PomodoroSession, ...(prev ?? [])]);
+      }),
+    [guard, setData],
   );
+
 
   const sessions = data ?? [];
   const completedToday = sessions.filter((s) => s.completed).length;
