@@ -31,8 +31,8 @@ function PrivacyPolicyPage() {
                 only used to provide the ASCEND experience for your account.
               </p>
               <p>
-                We do not sell personal data. We only use it to personalize your dashboard,
-                maintain your progress history, and support secure sign-in and data persistence.
+                We do not sell personal data. We only use it to personalize your dashboard, maintain
+                your progress history, and support secure sign-in and data persistence.
               </p>
               <p>
                 You can update your profile, theme, and reminder settings at any time from the
@@ -40,8 +40,8 @@ function PrivacyPolicyPage() {
                 removed according to your app and platform policies.
               </p>
               <p>
-                This app may use browser storage and notification permissions to remember your
-                theme preference and support reminders when your device allows them.
+                This app may use browser storage and notification permissions to remember your theme
+                preference and support reminders when your device allows them.
               </p>
             </div>
           </div>

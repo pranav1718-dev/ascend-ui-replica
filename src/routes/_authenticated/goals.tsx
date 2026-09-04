@@ -54,7 +54,9 @@ function GoalsPage() {
             {loading && <p className="text-[13px] text-slate-400">Loading goals…</p>}
             {!loading && visible.length === 0 && (
               <p className="text-[13px] text-slate-400">
-                {tab === "Active" ? "No active goals yet — add one below." : "Nothing completed yet."}
+                {tab === "Active"
+                  ? "No active goals yet — add one below."
+                  : "Nothing completed yet."}
               </p>
             )}
             {visible.map((g) => {

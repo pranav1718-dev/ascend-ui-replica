@@ -147,7 +147,10 @@ export function useHabits() {
         setData((prev) =>
           (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
         );
-        const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
+        const { error } = await db
+          .from("habits")
+          .update(patch as never)
+          .eq("id", habit.id);
         if (error) {
           // roll back the optimistic update so the UI reflects the database
           setData((prev) => (prev ?? []).map((h) => (h.id === habit.id ? habit : h)));
@@ -182,7 +185,6 @@ export function useHabits() {
       }),
     [guard, setData],
   );
-
 
   const doneCount = habits.filter((h) => h.completed_today).length;
   return { habits, loading, refresh, toggle, create, remove, doneCount, total: habits.length };
@@ -223,7 +225,10 @@ export function useGoals() {
       const p = Math.max(0, Math.min(100, Math.round(progress)));
       const patch = { progress: p, status: p >= 100 ? "completed" : "active" } as const;
       setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? { ...g, ...patch } : g)));
-      const { error } = await db.from("goals").update(patch as never).eq("id", goal.id);
+      const { error } = await db
+        .from("goals")
+        .update(patch as never)
+        .eq("id", goal.id);
       if (error) {
         setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? goal : g)));
         throw error;
@@ -242,7 +247,6 @@ export function useGoals() {
       }),
     [guard, setData],
   );
-
 
   return { goals: data ?? [], loading, refresh, create, setProgress, remove };
 }
@@ -310,7 +314,6 @@ export function useWorkouts() {
     [guard, setData],
   );
 
-
   return { workouts: data ?? [], loading, refresh, create, complete, remove };
 }
 
@@ -366,7 +369,6 @@ export function useWorkoutExercises(workoutId?: string) {
     [guard, setData],
   );
 
-
   return { exercises: data ?? [], loading, refresh, create, toggle };
 }
 
@@ -399,7 +401,6 @@ export function useStudySubjects() {
       }),
     [guard, setData],
   );
-
 
   const setProgress = useCallback(
     async (subject: StudySubject, progress: number) => {
@@ -473,7 +474,6 @@ export function useStudySessions() {
     [guard, setData],
   );
 
-
   return { sessions: data ?? [], loading, error, refresh, create, complete };
 }
 
@@ -523,7 +523,6 @@ export function useWater() {
     [setData],
   );
 
-
   return { glasses, goal, loading, refresh, setGlasses };
 }
 
@@ -564,7 +563,6 @@ export function usePomodoro() {
       }),
     [guard, setData],
   );
-
 
   const sessions = data ?? [];
   const completedToday = sessions.filter((s) => s.completed).length;

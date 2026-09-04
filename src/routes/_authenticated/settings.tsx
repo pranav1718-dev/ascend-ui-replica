@@ -45,7 +45,8 @@ function SettingsPage() {
     navigate({ to: "/login", replace: true });
   }
 
-  const themeValue = settings.theme === "system" ? "System" : settings.theme === "dark" ? "Dark" : "Light";
+  const themeValue =
+    settings.theme === "system" ? "System" : settings.theme === "dark" ? "Dark" : "Light";
   const reminderValue = settings.notifications_enabled ? "On" : "Off";
 
   return (

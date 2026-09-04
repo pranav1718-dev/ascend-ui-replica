@@ -59,14 +59,18 @@ function RemindersPage() {
           return;
         }
         await save({ notifications_enabled: false });
-        setNotice("Notifications were not granted. You can enable them later in your browser settings.");
+        setNotice(
+          "Notifications were not granted. You can enable them later in your browser settings.",
+        );
         return;
       }
 
       if (Notification.permission === "denied") {
         await save({ notifications_enabled: false });
         setPermission("denied");
-        setNotice("Notifications are blocked in this browser. Turn them on in site settings to enable reminders.");
+        setNotice(
+          "Notifications are blocked in this browser. Turn them on in site settings to enable reminders.",
+        );
         return;
       }
 
@@ -74,7 +78,7 @@ function RemindersPage() {
       setNotice(
         settings.notifications_enabled
           ? "Reminders are now off."
-          : "Reminders are now on. Your preference has been saved."
+          : "Reminders are now on. Your preference has been saved.",
       );
     } finally {
       setBusy(false);
@@ -95,7 +99,9 @@ function RemindersPage() {
                 </div>
                 <div>
                   <p className="text-[15px] font-semibold text-slate-900">Reminder notifications</p>
-                  <p className="text-[12.5px] text-slate-500">Save your preference and check browser permission.</p>
+                  <p className="text-[12.5px] text-slate-500">
+                    Save your preference and check browser permission.
+                  </p>
                 </div>
               </div>
               <button
@@ -103,7 +109,9 @@ function RemindersPage() {
                 onClick={() => void handleToggle()}
                 disabled={busy}
                 className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
-                  settings.notifications_enabled ? "bg-[#EAF2FF] text-[#0D47A1]" : "bg-slate-100 text-slate-600"
+                  settings.notifications_enabled
+                    ? "bg-[#EAF2FF] text-[#0D47A1]"
+                    : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {settings.notifications_enabled ? "On" : "Off"}
@@ -136,7 +144,9 @@ function RemindersPage() {
               <div className="flex items-start gap-3">
                 <Bell className="mt-0.5 h-4 w-4 text-slate-500" />
                 <p className="text-[12.5px] leading-5 text-slate-600">
-                  Scheduled browser notifications are not guaranteed across every device and browser. The app stores your reminder preference and requests permission when supported, but some environments still block or limit native notifications.
+                  Scheduled browser notifications are not guaranteed across every device and
+                  browser. The app stores your reminder preference and requests permission when
+                  supported, but some environments still block or limit native notifications.
                 </p>
               </div>
             </div>

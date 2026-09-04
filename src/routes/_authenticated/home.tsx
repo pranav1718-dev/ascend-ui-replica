@@ -1,16 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Menu,
-  Bell,
-  Check,
-  Dumbbell,
-  BookOpen,
-  User,
-  Target,
-  CheckCircle2,
-} from "lucide-react";
+import { Menu, Bell, Check, Dumbbell, BookOpen, User, Target, CheckCircle2 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import {
@@ -229,7 +220,13 @@ function DailyProgress({ percent, delta }: { percent: number; delta: number }) {
   const offset = c - (value / 100) * c;
 
   const headline =
-    percent >= 80 ? "Great job!" : percent >= 40 ? "Keep going!" : percent > 0 ? "Good start" : "Let's begin";
+    percent >= 80
+      ? "Great job!"
+      : percent >= 40
+        ? "Keep going!"
+        : percent > 0
+          ? "Good start"
+          : "Let's begin";
   const sub =
     percent === 0
       ? "Log something to start today."
