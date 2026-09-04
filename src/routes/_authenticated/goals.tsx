@@ -28,7 +28,8 @@ function daysLeft(date: string | null) {
 function GoalsPage() {
   const [tab, setTab] = useState<"Active" | "Completed">("Active");
   const [open, setOpen] = useState(false);
-  const { goals, loading, create, setProgress } = useGoals();
+  const [pendingDelete, setPendingDelete] = useState<Goal | null>(null);
+  const { goals, loading, create, setProgress, remove } = useGoals();
 
   const visible = goals.filter((g) =>
     tab === "Active" ? g.status !== "completed" : g.status === "completed",
