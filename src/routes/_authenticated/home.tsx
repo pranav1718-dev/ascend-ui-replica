@@ -179,12 +179,13 @@ function Header({ greeting, name }: { greeting: string; name: string }) {
           <Menu className="h-5 w-5 text-slate-700" />
         </Link>
         <div className="flex items-center gap-3">
-          <button
+          <Link
+            to="/reminders"
             aria-label="Notifications"
             className="relative grid h-10 w-10 place-items-center rounded-2xl bg-white/70 backdrop-blur border border-black/[0.04] shadow-sm active:scale-95 transition"
           >
             <Bell className="h-5 w-5 text-slate-700" />
-          </button>
+          </Link>
           <Link
             to="/profile"
             className="h-10 w-10 rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] p-[2px] shadow-md"
