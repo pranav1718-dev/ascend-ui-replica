@@ -56,9 +56,14 @@ function Login() {
   }
 
   async function handleGoogle() {
+    if (loading) return;
     setError(null);
+    setLoading(true);
     const { error: err } = await authService.signInWithGoogle();
-    if (err) setError(err.message);
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   }
 
   return (
