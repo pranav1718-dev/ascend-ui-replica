@@ -54,15 +54,29 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Guards against out-of-order responses: only the newest run may write state.
+  const seq = useRef(0);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
   const run = useCallback(async () => {
+    const id = ++seq.current;
     setLoading(true);
     try {
-      setData(await fn());
+      const result = await fn();
+      if (id !== seq.current || !alive.current) return;
+      setData(result);
       setError(null);
     } catch (e) {
+      if (id !== seq.current || !alive.current) return;
       setError(e as Error);
     } finally {
-      setLoading(false);
+      if (id === seq.current && alive.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
