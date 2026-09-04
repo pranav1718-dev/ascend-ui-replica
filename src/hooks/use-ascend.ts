@@ -91,24 +91,28 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
 /* ---------------- profile ---------------- */
 
 export function useProfile() {
-  const { data, loading, refresh, setData } = useAsync<Profile | null>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<Profile | null>(async () => {
     const id = await db.userId();
     const { data, error } = await db.from("profiles").select("*").eq("id", id).maybeSingle();
     if (error) throw error;
     return (data as Profile) ?? null;
   }, []);
 
+  const guard = useInFlight();
+
   const save = useCallback(
     async (patch: Partial<Profile>) => {
-      const id = await db.userId();
-      const row = await db.upsert<Profile>("profiles", { id, ...patch }, "id");
-      setData(row);
-      return row;
+      return guard("profile:save", async () => {
+        const id = await db.userId();
+        const row = await db.upsert<Profile>("profiles", { id, ...patch }, "id");
+        setData(row);
+        return row;
+      });
     },
-    [setData],
+    [guard, setData],
   );
 
-  return { profile: data, loading, refresh, save };
+  return { profile: data, loading, error, refresh, save };
 }
 
 export function useAuthEmail() {
