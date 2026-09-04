@@ -144,6 +144,15 @@ function GoalsPage() {
             })
           }
         />
+        <ConfirmDialog
+          open={!!pendingDelete}
+          title="Delete goal?"
+          message={pendingDelete ? `“${pendingDelete.title}” will be permanently removed.` : ""}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={async () => {
+            if (pendingDelete) await remove(pendingDelete.id);
+          }}
+        />
         <BottomNav />
       </div>
     </PhoneFrame>
