@@ -658,6 +658,9 @@ export function useAnalytics(days = 7) {
       db.from("habits").select("*").eq("user_id", userId),
     ]);
 
+    const failure = [workoutsRes, studyRes, pomoRes, waterRes, habitsRes].find((r) => r.error);
+    if (failure?.error) throw failure.error;
+
     const workouts = (workoutsRes.data ?? []) as Workout[];
     const study = (studyRes.data ?? []) as StudySession[];
     const pomo = (pomoRes.data ?? []) as PomodoroSession[];
