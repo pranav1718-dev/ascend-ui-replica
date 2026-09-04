@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { authService } from "@/services/auth";
 import {
   ChevronRight,
@@ -40,12 +41,17 @@ function SettingsPage() {
   const navigate = useNavigate();
   const { settings } = useSettings();
 
+  const [loggingOut, setLoggingOut] = useState(false);
+
   async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
     await authService.signOut();
     navigate({ to: "/login", replace: true });
   }
 
-  const themeValue = settings.theme === "system" ? "System" : settings.theme === "dark" ? "Dark" : "Light";
+  const themeValue =
+    settings.theme === "system" ? "System" : settings.theme === "dark" ? "Dark" : "Light";
   const reminderValue = settings.notifications_enabled ? "On" : "Off";
 
   return (
@@ -97,7 +103,8 @@ function SettingsPage() {
               ))}
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
+                disabled={loggingOut}
                 className="w-full text-left flex items-center gap-3 px-4 py-3.5 border-t border-slate-50"
               >
                 <div className="grid h-9 w-9 place-items-center rounded-xl bg-rose-50">

@@ -56,9 +56,14 @@ function Login() {
   }
 
   async function handleGoogle() {
+    if (loading) return;
     setError(null);
+    setLoading(true);
     const { error: err } = await authService.signInWithGoogle();
-    if (err) setError(err.message);
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   }
 
   return (
@@ -74,7 +79,8 @@ function Login() {
 
         <button
           type="button"
-          onClick={handleGoogle}
+          onClick={() => void handleGoogle()}
+          disabled={loading}
           className="mt-8 w-full h-12 rounded-xl border border-border bg-background flex items-center justify-center gap-3 text-[14px] font-medium text-foreground hover:bg-accent transition"
         >
           <GoogleIcon />

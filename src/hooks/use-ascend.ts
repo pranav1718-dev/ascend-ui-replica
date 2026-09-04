@@ -54,15 +54,29 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Guards against out-of-order responses: only the newest run may write state.
+  const seq = useRef(0);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
   const run = useCallback(async () => {
+    const id = ++seq.current;
     setLoading(true);
     try {
-      setData(await fn());
+      const result = await fn();
+      if (id !== seq.current || !alive.current) return;
+      setData(result);
       setError(null);
     } catch (e) {
+      if (id !== seq.current || !alive.current) return;
       setError(e as Error);
     } finally {
-      setLoading(false);
+      if (id === seq.current && alive.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
@@ -77,24 +91,28 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
 /* ---------------- profile ---------------- */
 
 export function useProfile() {
-  const { data, loading, refresh, setData } = useAsync<Profile | null>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<Profile | null>(async () => {
     const id = await db.userId();
     const { data, error } = await db.from("profiles").select("*").eq("id", id).maybeSingle();
     if (error) throw error;
     return (data as Profile) ?? null;
   }, []);
 
+  const guard = useInFlight();
+
   const save = useCallback(
     async (patch: Partial<Profile>) => {
-      const id = await db.userId();
-      const row = await db.upsert<Profile>("profiles", { id, ...patch }, "id");
-      setData(row);
-      return row;
+      return guard("profile:save", async () => {
+        const id = await db.userId();
+        const row = await db.upsert<Profile>("profiles", { id, ...patch }, "id");
+        setData(row);
+        return row;
+      });
     },
-    [setData],
+    [guard, setData],
   );
 
-  return { profile: data, loading, refresh, save };
+  return { profile: data, loading, error, refresh, save };
 }
 
 export function useAuthEmail() {
@@ -147,7 +165,10 @@ export function useHabits() {
         setData((prev) =>
           (prev ?? []).map((h) => (h.id === habit.id ? ({ ...h, ...patch } as Habit) : h)),
         );
-        const { error } = await db.from("habits").update(patch as never).eq("id", habit.id);
+        const { error } = await db
+          .from("habits")
+          .update(patch as never)
+          .eq("id", habit.id);
         if (error) {
           // roll back the optimistic update so the UI reflects the database
           setData((prev) => (prev ?? []).map((h) => (h.id === habit.id ? habit : h)));
@@ -182,7 +203,6 @@ export function useHabits() {
       }),
     [guard, setData],
   );
-
 
   const doneCount = habits.filter((h) => h.completed_today).length;
   return { habits, loading, refresh, toggle, create, remove, doneCount, total: habits.length };
@@ -223,7 +243,12 @@ export function useGoals() {
       const p = Math.max(0, Math.min(100, Math.round(progress)));
       const patch = { progress: p, status: p >= 100 ? "completed" : "active" } as const;
       setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? { ...g, ...patch } : g)));
-      const { error } = await db.from("goals").update(patch as never).eq("id", goal.id);
+      const userId = await db.userId();
+      const { error } = await db
+        .from("goals")
+        .update(patch as never)
+        .eq("id", goal.id)
+        .eq("user_id", userId);
       if (error) {
         setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? goal : g)));
         throw error;
@@ -242,7 +267,6 @@ export function useGoals() {
       }),
     [guard, setData],
   );
-
 
   return { goals: data ?? [], loading, refresh, create, setProgress, remove };
 }
@@ -310,7 +334,6 @@ export function useWorkouts() {
     [guard, setData],
   );
 
-
   return { workouts: data ?? [], loading, refresh, create, complete, remove };
 }
 
@@ -366,7 +389,6 @@ export function useWorkoutExercises(workoutId?: string) {
     [guard, setData],
   );
 
-
   return { exercises: data ?? [], loading, refresh, create, toggle };
 }
 
@@ -399,7 +421,6 @@ export function useStudySubjects() {
       }),
     [guard, setData],
   );
-
 
   const setProgress = useCallback(
     async (subject: StudySubject, progress: number) => {
@@ -473,7 +494,6 @@ export function useStudySessions() {
     [guard, setData],
   );
 
-
   return { sessions: data ?? [], loading, error, refresh, create, complete };
 }
 
@@ -523,7 +543,6 @@ export function useWater() {
     [setData],
   );
 
-
   return { glasses, goal, loading, refresh, setGlasses };
 }
 
@@ -564,7 +583,6 @@ export function usePomodoro() {
       }),
     [guard, setData],
   );
-
 
   const sessions = data ?? [];
   const completedToday = sessions.filter((s) => s.completed).length;
@@ -639,6 +657,9 @@ export function useAnalytics(days = 7) {
       db.from("water_tracking").select("*").eq("user_id", userId).gte("log_date", range[0]),
       db.from("habits").select("*").eq("user_id", userId),
     ]);
+
+    const failure = [workoutsRes, studyRes, pomoRes, waterRes, habitsRes].find((r) => r.error);
+    if (failure?.error) throw failure.error;
 
     const workouts = (workoutsRes.data ?? []) as Workout[];
     const study = (studyRes.data ?? []) as StudySession[];

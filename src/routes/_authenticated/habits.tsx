@@ -151,7 +151,6 @@ function HabitsPage() {
                 </motion.div>
               );
             })}
-
           </div>
         </div>
 

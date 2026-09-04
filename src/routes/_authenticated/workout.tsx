@@ -27,10 +27,7 @@ function WorkoutPage() {
   const [openExercise, setOpenExercise] = useState(false);
   const { workouts, loading, create, complete } = useWorkouts();
 
-  const next = useMemo(
-    () => workouts.find((w) => !w.completed) ?? workouts[0],
-    [workouts],
-  );
+  const next = useMemo(() => workouts.find((w) => !w.completed) ?? workouts[0], [workouts]);
   const { exercises, create: addExercise, toggle } = useWorkoutExercises(next?.id);
 
   const stats = useMemo(() => {
@@ -126,7 +123,9 @@ function WorkoutPage() {
           {tab === "Exercises" && (
             <div className="space-y-2.5">
               {!next && (
-                <p className="text-[13px] text-slate-400">Create a workout first to add exercises.</p>
+                <p className="text-[13px] text-slate-400">
+                  Create a workout first to add exercises.
+                </p>
               )}
               {next && exercises.length === 0 && (
                 <p className="text-[13px] text-slate-400">No exercises in {next.name} yet.</p>
@@ -183,7 +182,9 @@ function WorkoutPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-semibold text-slate-900 truncate">{w.name}</p>
                     <p className="text-[12.5px] text-slate-500">
-                      {w.scheduled_at ? new Date(w.scheduled_at).toLocaleDateString() : "Unscheduled"}
+                      {w.scheduled_at
+                        ? new Date(w.scheduled_at).toLocaleDateString()
+                        : "Unscheduled"}
                       {w.duration_min ? ` • ${w.duration_min} min` : ""}
                     </p>
                   </div>

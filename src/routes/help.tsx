@@ -27,7 +27,9 @@ function HelpPage() {
               </div>
               <div>
                 <p className="text-[15px] font-semibold text-slate-900">How can we help?</p>
-                <p className="text-[12.5px] text-slate-500">Find the support option that fits your issue.</p>
+                <p className="text-[12.5px] text-slate-500">
+                  Find the support option that fits your issue.
+                </p>
               </div>
             </div>
 
@@ -51,7 +53,10 @@ function HelpPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold text-slate-800">Common issues</p>
-                  <p className="text-[12.5px] text-slate-500">Check your connection, refresh the app, and confirm your browser allows notifications.</p>
+                  <p className="text-[12.5px] text-slate-500">
+                    Check your connection, refresh the app, and confirm your browser allows
+                    notifications.
+                  </p>
                 </div>
               </div>
 
@@ -64,7 +69,9 @@ function HelpPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold text-slate-800">Open settings</p>
-                  <p className="text-[12.5px] text-slate-500">Review privacy, theme and reminder controls.</p>
+                  <p className="text-[12.5px] text-slate-500">
+                    Review privacy, theme and reminder controls.
+                  </p>
                 </div>
               </Link>
             </div>

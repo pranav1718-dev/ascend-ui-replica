@@ -42,11 +42,7 @@ export const db = {
   userId: currentUserId,
 
   /** Insert-or-update on a unique constraint. */
-  async upsert<T>(
-    table: TableName,
-    row: Record<string, unknown>,
-    onConflict: string,
-  ): Promise<T> {
+  async upsert<T>(table: TableName, row: Record<string, unknown>, onConflict: string): Promise<T> {
     const userId = await currentUserId();
     const column = OWNER_ID_COLUMN[table] ?? "user_id";
     const { data, error } = await client()
@@ -57,7 +53,6 @@ export const db = {
     if (error) throw error;
     return data as T;
   },
-
 
   async list<T extends Row>(table: TableName): Promise<T[]> {
     const userId = await currentUserId();

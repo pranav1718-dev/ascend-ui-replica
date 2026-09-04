@@ -36,8 +36,8 @@ function TermsPage() {
               </p>
               <p>
                 We strive to keep the service secure and available, but no internet-connected system
-                can guarantee uninterrupted availability. Please keep your account credentials secure
-                and contact support if you notice unusual account activity.
+                can guarantee uninterrupted availability. Please keep your account credentials
+                secure and contact support if you notice unusual account activity.
               </p>
               <p>
                 These terms do not override any applicable local law or platform policies for your

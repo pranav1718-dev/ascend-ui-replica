@@ -17,7 +17,12 @@ export const Route = createFileRoute("/theme")({
 
 type ThemeOption = "light" | "dark" | "system";
 
-const options: { value: ThemeOption; label: string; icon: typeof SunMedium; description: string }[] = [
+const options: {
+  value: ThemeOption;
+  label: string;
+  icon: typeof SunMedium;
+  description: string;
+}[] = [
   { value: "light", label: "Light", icon: SunMedium, description: "Bright and crisp" },
   { value: "dark", label: "Dark", icon: MoonStar, description: "Low-light friendly" },
   { value: "system", label: "System", icon: MonitorSmartphone, description: "Match your device" },

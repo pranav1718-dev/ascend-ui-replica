@@ -12,12 +12,7 @@ import {
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { SheetDialog } from "@/components/common/SheetDialog";
-import {
-  useAuthEmail,
-  useProfile,
-  useStudySessions,
-  useWorkouts,
-} from "@/hooks/use-ascend";
+import { useAuthEmail, useProfile, useStudySessions, useWorkouts } from "@/hooks/use-ascend";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -45,15 +40,10 @@ function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   const daysActive = profile?.created_at
-    ? Math.max(
-        1,
-        Math.ceil((Date.now() - new Date(profile.created_at).getTime()) / 86400000),
-      )
+    ? Math.max(1, Math.ceil((Date.now() - new Date(profile.created_at).getTime()) / 86400000))
     : 0;
   const totalWorkouts = workouts.filter((w) => w.completed).length;
-  const studyHours = Math.round(
-    sessions.reduce((a, s) => a + (s.duration_min ?? 0), 0) / 60,
-  );
+  const studyHours = Math.round(sessions.reduce((a, s) => a + (s.duration_min ?? 0), 0) / 60);
 
   const displayName = profile?.full_name?.trim() || email?.split("@")[0] || "Your profile";
 

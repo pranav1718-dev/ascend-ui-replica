@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useGoals } from "@/hooks/use-ascend";
 import { iconFor, paletteFor } from "@/lib/icon-map";
+import type { Goal } from "@/types/models";
 
 export const Route = createFileRoute("/_authenticated/goals")({
   head: () => ({
@@ -15,9 +17,17 @@ export const Route = createFileRoute("/_authenticated/goals")({
   component: GoalsPage,
 });
 
+/** Parses a `YYYY-MM-DD` target date as a LOCAL day so timezones never shift it. */
+function localDay(date: string) {
+  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
 function daysLeft(date: string | null) {
   if (!date) return "";
-  const diff = Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.round((localDay(date).getTime() - start.getTime()) / 86400000);
   if (diff < 0) return "Overdue";
   if (diff === 0) return "Today";
   return `${diff} days left`;
@@ -26,7 +36,8 @@ function daysLeft(date: string | null) {
 function GoalsPage() {
   const [tab, setTab] = useState<"Active" | "Completed">("Active");
   const [open, setOpen] = useState(false);
-  const { goals, loading, create, setProgress } = useGoals();
+  const [pendingDelete, setPendingDelete] = useState<Goal | null>(null);
+  const { goals, loading, create, setProgress, remove } = useGoals();
 
   const visible = goals.filter((g) =>
     tab === "Active" ? g.status !== "completed" : g.status === "completed",
@@ -54,7 +65,9 @@ function GoalsPage() {
             {loading && <p className="text-[13px] text-slate-400">Loading goals…</p>}
             {!loading && visible.length === 0 && (
               <p className="text-[13px] text-slate-400">
-                {tab === "Active" ? "No active goals yet — add one below." : "Nothing completed yet."}
+                {tab === "Active"
+                  ? "No active goals yet — add one below."
+                  : "Nothing completed yet."}
               </p>
             )}
             {visible.map((g) => {
@@ -100,6 +113,14 @@ function GoalsPage() {
                       <Check className="h-4 w-4" strokeWidth={3} />
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(g)}
+                    aria-label={`Delete ${g.title}`}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-300 hover:text-rose-500 active:scale-95 transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}
@@ -130,6 +151,15 @@ function GoalsPage() {
               target_date: v.target_date || null,
             })
           }
+        />
+        <ConfirmDialog
+          open={!!pendingDelete}
+          title="Delete goal?"
+          message={pendingDelete ? `“${pendingDelete.title}” will be permanently removed.` : ""}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={async () => {
+            if (pendingDelete) await remove(pendingDelete.id);
+          }}
         />
         <BottomNav />
       </div>

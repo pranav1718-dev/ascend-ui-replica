@@ -227,7 +227,9 @@ function StudyPage() {
             <div>
               <p className="text-[13px] font-semibold text-slate-500 mb-3">Subjects</p>
               {subjectsLoading && <p className="text-[13px] text-slate-400">Loading subjects…</p>}
-              {subjectsError && <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>}
+              {subjectsError && (
+                <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>
+              )}
               {!subjectsLoading && !subjectsError && subjects.length === 0 && (
                 <p className="text-[13px] text-slate-400">
                   No subjects yet — tap + to add your first one.
