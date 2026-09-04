@@ -25,7 +25,7 @@ const RANGES = [
 function AnalyticsPage() {
   const [rangeIdx, setRangeIdx] = useState(0);
   const range = RANGES[rangeIdx];
-  const { data, loading } = useAnalytics(range.days);
+  const { data, loading, error, refresh } = useAnalytics(range.days);
   const { goals } = useGoals();
 
   const days = data ?? [];
@@ -152,7 +152,18 @@ function AnalyticsPage() {
 
           <div className="rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgba(13,71,161,0.06)] border border-black/[0.03]">
             <h3 className="text-[15px] font-semibold text-slate-900">Progress</h3>
-            {!loading && !hasData ? (
+            {error ? (
+              <div className="mt-3">
+                <p className="text-[13px] text-rose-500">Couldn’t load your analytics.</p>
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="mt-1 text-[12.5px] font-semibold text-[#0D47A1]"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : !loading && !hasData ? (
               <p className="mt-3 text-[13px] text-slate-500">
                 No activity logged in this period yet.
               </p>
