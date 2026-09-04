@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useGoals } from "@/hooks/use-ascend";
 import { iconFor, paletteFor } from "@/lib/icon-map";
+import type { Goal } from "@/types/models";
 
 export const Route = createFileRoute("/_authenticated/goals")({
   head: () => ({
