@@ -225,10 +225,12 @@ export function useGoals() {
       const p = Math.max(0, Math.min(100, Math.round(progress)));
       const patch = { progress: p, status: p >= 100 ? "completed" : "active" } as const;
       setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? { ...g, ...patch } : g)));
+      const userId = await db.userId();
       const { error } = await db
         .from("goals")
         .update(patch as never)
-        .eq("id", goal.id);
+        .eq("id", goal.id)
+        .eq("user_id", userId);
       if (error) {
         setData((prev) => (prev ?? []).map((g) => (g.id === goal.id ? goal : g)));
         throw error;
