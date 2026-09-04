@@ -105,6 +105,14 @@ function GoalsPage() {
                       <Check className="h-4 w-4" strokeWidth={3} />
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(g)}
+                    aria-label={`Delete ${g.title}`}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-300 hover:text-rose-500 active:scale-95 transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}
