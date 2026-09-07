@@ -56,11 +56,20 @@ function useCountUp(target: number, duration = 900) {
 function HomePage() {
   const greeting = useGreeting();
   const { profile } = useProfile();
-  const { habits, doneCount, total } = useHabits();
-  const { workouts } = useWorkouts();
-  const { sessions } = useStudySessions();
-  const { goals } = useGoals();
-  const { data: week } = useAnalytics(7);
+  const { habits, doneCount, total, error: habitsError, refresh: refreshHabits } = useHabits();
+  const { workouts, error: workoutsError, refresh: refreshWorkouts } = useWorkouts();
+  const { sessions, error: sessionsError, refresh: refreshSessions } = useStudySessions();
+  const { goals, error: goalsError, refresh: refreshGoals } = useGoals();
+  const { data: week, error: weekError, refresh: refreshWeek } = useAnalytics(7);
+
+  const loadError = habitsError ?? workoutsError ?? sessionsError ?? goalsError ?? weekError;
+  const retry = () => {
+    void refreshHabits();
+    void refreshWorkouts();
+    void refreshSessions();
+    void refreshGoals();
+    void refreshWeek();
+  };
 
   const today = todayISO();
 
@@ -145,15 +154,35 @@ function HomePage() {
       <div className="relative flex-1 bg-[#F7F8FC] pb-28">
         <div className="px-6 pt-6 space-y-6">
           <Header greeting={greeting} name={firstName} />
-          <DailyProgress percent={percent} delta={percent - (prevStat?.score ?? 0)} />
-          <TodaysPlan items={plan} />
-          <StatsRow
-            workouts={weekWorkouts}
-            studyHours={Number(weekStudyHours.toFixed(1))}
-            habitPct={habitPct}
-            goalAvg={goalAvg}
-          />
-          <ProgressChart data={chartData} />
+          {loadError ? (
+            <div className="rounded-[24px] bg-white p-5 shadow-[0_8px_30px_rgba(13,71,161,0.06)] border border-black/[0.03]">
+              <h3 className="text-[15px] font-semibold text-slate-900">
+                Couldn't load your dashboard
+              </h3>
+              <p className="mt-1 text-[13px] text-slate-500">
+                Your numbers are hidden so nothing misleading is shown.
+              </p>
+              <button
+                type="button"
+                onClick={retry}
+                className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <>
+              <DailyProgress percent={percent} delta={percent - (prevStat?.score ?? 0)} />
+              <TodaysPlan items={plan} />
+              <StatsRow
+                workouts={weekWorkouts}
+                studyHours={Number(weekStudyHours.toFixed(1))}
+                habitPct={habitPct}
+                goalAvg={goalAvg}
+              />
+              <ProgressChart data={chartData} />
+            </>
+          )}
         </div>
         <BottomNav />
       </div>

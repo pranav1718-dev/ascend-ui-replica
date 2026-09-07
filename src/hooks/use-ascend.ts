@@ -22,6 +22,12 @@ export function todayISO(d = new Date()) {
   return tz.toISOString().slice(0, 10);
 }
 
+/** Parses a `YYYY-MM-DD` string as a LOCAL calendar day so timezones never shift it. */
+export function localDay(date: string) {
+  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
+
 export function lastNDays(n: number): string[] {
   const out: string[] = [];
   for (let i = n - 1; i >= 0; i--) {
@@ -126,7 +132,7 @@ export function useAuthEmail() {
 /* ---------------- habits ---------------- */
 
 export function useHabits() {
-  const { data, loading, refresh, setData } = useAsync<Habit[]>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<Habit[]>(async () => {
     const { data, error } = await db
       .from("habits")
       .select("*")
@@ -205,13 +211,23 @@ export function useHabits() {
   );
 
   const doneCount = habits.filter((h) => h.completed_today).length;
-  return { habits, loading, refresh, toggle, create, remove, doneCount, total: habits.length };
+  return {
+    habits,
+    loading,
+    error,
+    refresh,
+    toggle,
+    create,
+    remove,
+    doneCount,
+    total: habits.length,
+  };
 }
 
 /* ---------------- goals ---------------- */
 
 export function useGoals() {
-  const { data, loading, refresh, setData } = useAsync<Goal[]>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<Goal[]>(async () => {
     const { data, error } = await db
       .from("goals")
       .select("*")
@@ -268,13 +284,13 @@ export function useGoals() {
     [guard, setData],
   );
 
-  return { goals: data ?? [], loading, refresh, create, setProgress, remove };
+  return { goals: data ?? [], loading, error, refresh, create, setProgress, remove };
 }
 
 /* ---------------- workouts ---------------- */
 
 export function useWorkouts() {
-  const { data, loading, refresh, setData } = useAsync<Workout[]>(async () => {
+  const { data, loading, error, refresh, setData } = useAsync<Workout[]>(async () => {
     const { data, error } = await db
       .from("workouts")
       .select("*")
@@ -334,7 +350,7 @@ export function useWorkouts() {
     [guard, setData],
   );
 
-  return { workouts: data ?? [], loading, refresh, create, complete, remove };
+  return { workouts: data ?? [], loading, error, refresh, create, complete, remove };
 }
 
 export function useWorkoutExercises(workoutId?: string) {

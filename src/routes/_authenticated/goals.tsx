@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { useGoals } from "@/hooks/use-ascend";
+import { localDay, useGoals } from "@/hooks/use-ascend";
 import { iconFor, paletteFor } from "@/lib/icon-map";
 import type { Goal } from "@/types/models";
 
@@ -16,12 +16,6 @@ export const Route = createFileRoute("/_authenticated/goals")({
   }),
   component: GoalsPage,
 });
-
-/** Parses a `YYYY-MM-DD` target date as a LOCAL day so timezones never shift it. */
-function localDay(date: string) {
-  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
-}
 
 function daysLeft(date: string | null) {
   if (!date) return "";
