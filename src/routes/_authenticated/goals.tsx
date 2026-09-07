@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { useGoals } from "@/hooks/use-ascend";
+import { localDay, useGoals } from "@/hooks/use-ascend";
 import { iconFor, paletteFor } from "@/lib/icon-map";
 import type { Goal } from "@/types/models";
 
