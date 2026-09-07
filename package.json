@@ -9,9 +9,13 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build:mobile": "MOBILE=1 vite build && node scripts/prepare-mobile.mjs",
+    "cap:sync": "npm run build:mobile && cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/mcp-js": "^0.26.1",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -69,6 +73,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.13.1",
     "@types/node": "^22.16.5",

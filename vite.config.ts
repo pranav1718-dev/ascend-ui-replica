@@ -7,13 +7,19 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 //import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
+// MOBILE=1 builds a client-side SPA shell (dist/client/_shell.html) that the
+// Android WebView can boot for any route. The normal web build is untouched.
+const isMobile = process.env["MOBILE"] === "1";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    ...(isMobile ? { spa: { enabled: true } } : {}),
   },
   // vite: {
   //   plugins: [mcpPlugin()],
   // },
 });
+
