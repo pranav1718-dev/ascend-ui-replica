@@ -17,12 +17,6 @@ export const Route = createFileRoute("/_authenticated/goals")({
   component: GoalsPage,
 });
 
-/** Parses a `YYYY-MM-DD` target date as a LOCAL day so timezones never shift it. */
-function localDay(date: string) {
-  const [y, m, d] = date.slice(0, 10).split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
-}
-
 function daysLeft(date: string | null) {
   if (!date) return "";
   const today = new Date();

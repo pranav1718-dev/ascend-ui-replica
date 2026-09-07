@@ -6,7 +6,7 @@ import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
-import { useWorkoutExercises, useWorkouts } from "@/hooks/use-ascend";
+import { localDay, useWorkoutExercises, useWorkouts } from "@/hooks/use-ascend";
 import workoutArt from "@/assets/workout-illustration.png";
 
 export const Route = createFileRoute("/_authenticated/workout")({
@@ -264,7 +264,7 @@ function WorkoutPage() {
               name: v.name.trim(),
               category: v.category || undefined,
               duration_min: v.duration_min ? Number(v.duration_min) : undefined,
-              scheduled_at: v.scheduled_at ? new Date(v.scheduled_at).toISOString() : null,
+              scheduled_at: v.scheduled_at ? localDay(v.scheduled_at).toISOString() : null,
             });
           }}
         />
