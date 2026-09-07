@@ -211,7 +211,17 @@ export function useHabits() {
   );
 
   const doneCount = habits.filter((h) => h.completed_today).length;
-  return { habits, loading, error, refresh, toggle, create, remove, doneCount, total: habits.length };
+  return {
+    habits,
+    loading,
+    error,
+    refresh,
+    toggle,
+    create,
+    remove,
+    doneCount,
+    total: habits.length,
+  };
 }
 
 /* ---------------- goals ---------------- */
