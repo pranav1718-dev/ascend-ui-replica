@@ -33,9 +33,21 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+const DATE_KEY = "ascend:study-date";
+
 function StudyPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Plan");
   const [open, setOpen] = useState(false);
+
+  /* selected day — kept across navigation and refresh */
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (typeof window === "undefined") return todayISO();
+    return window.localStorage.getItem(DATE_KEY) || todayISO();
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(DATE_KEY, selectedDate);
+  }, [selectedDate]);
+
 
   const {
     subjects,
