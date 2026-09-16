@@ -510,7 +510,27 @@ export function useStudySessions() {
     [guard, setData],
   );
 
-  return { sessions: data ?? [], loading, error, refresh, create, complete };
+  /** Reverts a completed session back to incomplete (persisted). */
+  const uncomplete = useCallback(
+    async (session: StudySession) =>
+      guard(`uncomplete:${session.id}`, async () => {
+        setData((prev) =>
+          (prev ?? []).map((s) => (s.id === session.id ? { ...s, completed: false } : s)),
+        );
+        const { error } = await db
+          .from("study_sessions")
+          .update({ completed: false } as never)
+          .eq("id", session.id)
+          .eq("user_id", await db.userId());
+        if (error) {
+          setData((prev) => (prev ?? []).map((s) => (s.id === session.id ? session : s)));
+          throw error;
+        }
+      }),
+    [guard, setData],
+  );
+
+  return { sessions: data ?? [], loading, error, refresh, create, complete, uncomplete };
 }
 
 /* ---------------- water ---------------- */
