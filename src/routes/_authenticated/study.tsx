@@ -201,13 +201,15 @@ function StudyPage() {
               </div>
 
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-3">Today's Sessions</p>
+                <p className="text-[13px] font-semibold text-slate-500 mb-3">
+                  {selectedDate === todayISO() ? "Today's Sessions" : "Sessions"}
+                </p>
                 {sessionsError && (
                   <p className="text-[13px] text-rose-500">Couldn't load sessions.</p>
                 )}
                 {!sessionsLoading && !sessionsError && todaysSessions.length === 0 && (
                   <p className="text-[13px] text-slate-400">
-                    No sessions today — tap + to add one.
+                    No sessions on this day — tap + to add one.
                   </p>
                 )}
                 <div className="space-y-2.5">
