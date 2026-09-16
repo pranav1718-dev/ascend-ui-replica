@@ -366,9 +366,32 @@ function StudyPage() {
             onClose={() => setOpen(false)}
             title="New Study Session"
             submitLabel="Add Session"
+            addAnotherLabel="Save & add another"
             fields={[
-              { name: "subject", label: "Subject", placeholder: "Data Structures" },
+              {
+                name: "subject_id",
+                label: "Subject",
+                type: "select",
+                required: false,
+                placeholder: subjects.length ? "Choose a subject" : "No subjects yet",
+                options: [
+                  ...subjects.map((s) => ({ value: s.name, label: s.name })),
+                  { value: "__other", label: "Other (type below)" },
+                ],
+              },
+              {
+                name: "subject",
+                label: "Other subject",
+                placeholder: "Data Structures",
+                required: false,
+              },
               { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
+              {
+                name: "date",
+                label: "Date",
+                type: "date",
+                defaultValue: selectedDate,
+              },
               { name: "time", label: "Start time", type: "time", required: false },
               {
                 name: "duration_min",
@@ -379,11 +402,16 @@ function StudyPage() {
               },
             ]}
             onSubmit={async (v) => {
+              const picked = v.subject_id && v.subject_id !== "__other" ? v.subject_id : "";
+              const subject = (picked || v.subject || "").trim();
+              if (!subject) throw new Error("Pick a subject or type one.");
+              const day = v.date || selectedDate;
               const started = v.time
-                ? new Date(`${todayISO()}T${v.time}:00`).toISOString()
-                : new Date().toISOString();
+                ? new Date(`${day}T${v.time}:00`).toISOString()
+                : localDay(day).toISOString();
+              setSelectedDate(day);
               await createSession({
-                subject: v.subject.trim(),
+                subject,
                 topic: v.topic?.trim() || undefined,
                 duration_min: v.duration_min ? Number(v.duration_min) : undefined,
                 started_at: started,
