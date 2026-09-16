@@ -7,9 +7,11 @@ export interface SheetField {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "time";
+  type?: "text" | "number" | "date" | "time" | "select";
   required?: boolean;
   defaultValue?: string;
+  /** Options for `type: "select"`. */
+  options?: { value: string; label: string }[];
 }
 
 /**
@@ -23,6 +25,7 @@ export function SheetDialog({
   fields,
   submitLabel = "Save",
   withIconPicker = false,
+  addAnotherLabel,
   onSubmit,
 }: {
   open: boolean;
@@ -31,37 +34,53 @@ export function SheetDialog({
   fields: SheetField[];
   submitLabel?: string;
   withIconPicker?: boolean;
+  /** When set, shows a secondary action that saves and keeps the sheet open. */
+  addAnotherLabel?: string;
   onSubmit: (values: Record<string, string>, icon: string) => Promise<void> | void;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [icon, setIcon] = useState(ICON_KEYS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const initial = () => Object.fromEntries(fields.map((f) => [f.name, f.defaultValue ?? ""]));
 
   useEffect(() => {
     if (open) {
-      setValues(Object.fromEntries(fields.map((f) => [f.name, f.defaultValue ?? ""])));
+      setValues(initial());
       setError(null);
+      setSaved(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function run(keepOpen: boolean) {
     const missing = fields.find((f) => f.required !== false && !values[f.name]?.trim());
     if (missing) {
       setError(`${missing.label} is required.`);
       return;
     }
     setBusy(true);
+    setError(null);
     try {
       await onSubmit(values, icon);
-      onClose();
+      if (keepOpen) {
+        setValues(initial());
+        setSaved(true);
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    await run(false);
   }
 
   return (
@@ -100,13 +119,28 @@ export function SheetDialog({
               {fields.map((f) => (
                 <label key={f.name} className="block">
                   <span className="text-[12.5px] font-semibold text-slate-500">{f.label}</span>
-                  <input
-                    type={f.type ?? "text"}
-                    value={values[f.name] ?? ""}
-                    placeholder={f.placeholder}
-                    onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
-                    className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
-                  />
+                  {f.type === "select" ? (
+                    <select
+                      value={values[f.name] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                      className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
+                    >
+                      <option value="">{f.placeholder ?? "Select…"}</option>
+                      {(f.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.type ?? "text"}
+                      value={values[f.name] ?? ""}
+                      placeholder={f.placeholder}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                      className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
+                    />
+                  )}
                 </label>
               ))}
 
@@ -132,6 +166,9 @@ export function SheetDialog({
               )}
 
               {error && <p className="text-[12.5px] font-medium text-rose-500">{error}</p>}
+              {!error && saved && (
+                <p className="text-[12.5px] font-medium text-emerald-600">Saved — add another.</p>
+              )}
             </div>
 
             <button
@@ -141,6 +178,16 @@ export function SheetDialog({
             >
               {busy ? "Saving…" : submitLabel}
             </button>
+            {addAnotherLabel && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void run(true)}
+                className="mt-3 w-full h-12 rounded-full bg-[#0D47A1]/[0.06] text-[#0D47A1] text-[14px] font-semibold active:scale-[0.98] transition disabled:opacity-60"
+              >
+                {addAnotherLabel}
+              </button>
+            )}
           </motion.form>
         </div>
       )}

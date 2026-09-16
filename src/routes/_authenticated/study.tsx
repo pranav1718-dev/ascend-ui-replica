@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
 import { iconFor } from "@/lib/icon-map";
 import {
+  localDay,
   todayISO,
   useStudySessions,
   useStudySubjects,
@@ -33,9 +34,20 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+const DATE_KEY = "ascend:study-date";
+
 function StudyPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Plan");
   const [open, setOpen] = useState(false);
+
+  /* selected day — kept across navigation and refresh */
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (typeof window === "undefined") return todayISO();
+    return window.localStorage.getItem(DATE_KEY) || todayISO();
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(DATE_KEY, selectedDate);
+  }, [selectedDate]);
 
   const {
     subjects,
@@ -50,15 +62,15 @@ function StudyPage() {
     error: sessionsError,
     create: createSession,
     complete,
+    uncomplete,
   } = useStudySessions();
   const { completedToday, focusMinutesToday } = usePomodoro();
   const { settings } = useSettings();
 
-  /* today's sessions */
-  const today = todayISO();
+  /* sessions on the selected day (local dates, never UTC-shifted) */
   const todaysSessions = useMemo(
-    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === today),
-    [sessions, today],
+    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === selectedDate),
+    [sessions, selectedDate],
   );
   const next = todaysSessions.find((s) => !s.completed) ?? null;
 
@@ -111,8 +123,29 @@ function StudyPage() {
 
           {tab === "Plan" && (
             <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value || todayISO())}
+                  aria-label="Selected day"
+                  className="h-10 flex-1 rounded-full bg-white border border-black/[0.04] px-4 text-[13px] font-semibold text-slate-700 shadow-sm outline-none focus:border-[#1976D2]/40"
+                />
+                {selectedDate !== todayISO() && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDate(todayISO())}
+                    className="h-10 rounded-full bg-[#0D47A1]/[0.06] text-[#0D47A1] text-[12.5px] font-semibold px-4"
+                  >
+                    Today
+                  </button>
+                )}
+              </div>
+
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-2">Today's Study Plan</p>
+                <p className="text-[13px] font-semibold text-slate-500 mb-2">
+                  {selectedDate === todayISO() ? "Today's Study Plan" : "Study Plan"}
+                </p>
                 <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#E3F0FF] to-[#F5F9FF] p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.08)]">
                   <div className="relative z-10 max-w-[65%]">
                     {sessionsLoading ? (
@@ -168,13 +201,15 @@ function StudyPage() {
               </div>
 
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-3">Today's Sessions</p>
+                <p className="text-[13px] font-semibold text-slate-500 mb-3">
+                  {selectedDate === todayISO() ? "Today's Sessions" : "Sessions"}
+                </p>
                 {sessionsError && (
                   <p className="text-[13px] text-rose-500">Couldn't load sessions.</p>
                 )}
                 {!sessionsLoading && !sessionsError && todaysSessions.length === 0 && (
                   <p className="text-[13px] text-slate-400">
-                    No sessions today — tap + to add one.
+                    No sessions on this day — tap + to add one.
                   </p>
                 )}
                 <div className="space-y-2.5">
@@ -204,9 +239,15 @@ function StudyPage() {
                           </p>
                         </div>
                         {s.completed ? (
-                          <div className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white">
+                          <button
+                            type="button"
+                            onClick={() => void uncomplete(s)}
+                            aria-label={`Mark ${s.subject} incomplete`}
+                            title="Mark incomplete"
+                            className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white active:scale-95 transition"
+                          >
                             <Check className="h-4 w-4" strokeWidth={3} />
-                          </div>
+                          </button>
                         ) : (
                           <button
                             onClick={() => start(s)}
@@ -325,9 +366,32 @@ function StudyPage() {
             onClose={() => setOpen(false)}
             title="New Study Session"
             submitLabel="Add Session"
+            addAnotherLabel="Save & add another"
             fields={[
-              { name: "subject", label: "Subject", placeholder: "Data Structures" },
+              {
+                name: "subject_id",
+                label: "Subject",
+                type: "select",
+                required: false,
+                placeholder: subjects.length ? "Choose a subject" : "No subjects yet",
+                options: [
+                  ...subjects.map((s) => ({ value: s.name, label: s.name })),
+                  { value: "__other", label: "Other (type below)" },
+                ],
+              },
+              {
+                name: "subject",
+                label: "Other subject",
+                placeholder: "Data Structures",
+                required: false,
+              },
               { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
+              {
+                name: "date",
+                label: "Date",
+                type: "date",
+                defaultValue: selectedDate,
+              },
               { name: "time", label: "Start time", type: "time", required: false },
               {
                 name: "duration_min",
@@ -338,11 +402,18 @@ function StudyPage() {
               },
             ]}
             onSubmit={async (v) => {
+              const picked = v.subject_id && v.subject_id !== "__other" ? v.subject_id : "";
+              const subject = (picked || v.subject || "").trim();
+              if (!subject) throw new Error("Pick a subject or type one.");
+              const day = v.date || selectedDate;
               const started = v.time
-                ? new Date(`${todayISO()}T${v.time}:00`).toISOString()
-                : new Date().toISOString();
+                ? new Date(`${day}T${v.time}:00`).toISOString()
+                : day === todayISO()
+                  ? new Date().toISOString()
+                  : localDay(day).toISOString();
+              setSelectedDate(day);
               await createSession({
-                subject: v.subject.trim(),
+                subject,
                 topic: v.topic?.trim() || undefined,
                 duration_min: v.duration_min ? Number(v.duration_min) : undefined,
                 started_at: started,
