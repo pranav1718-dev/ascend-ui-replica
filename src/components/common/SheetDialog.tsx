@@ -119,13 +119,28 @@ export function SheetDialog({
               {fields.map((f) => (
                 <label key={f.name} className="block">
                   <span className="text-[12.5px] font-semibold text-slate-500">{f.label}</span>
-                  <input
-                    type={f.type ?? "text"}
-                    value={values[f.name] ?? ""}
-                    placeholder={f.placeholder}
-                    onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
-                    className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
-                  />
+                  {f.type === "select" ? (
+                    <select
+                      value={values[f.name] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                      className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
+                    >
+                      <option value="">{f.placeholder ?? "Select…"}</option>
+                      {(f.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.type ?? "text"}
+                      value={values[f.name] ?? ""}
+                      placeholder={f.placeholder}
+                      onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                      className="mt-1.5 w-full h-12 rounded-2xl bg-[#F7F8FC] border border-black/[0.04] px-4 text-[15px] text-slate-900 outline-none focus:border-[#1976D2]/40"
+                    />
+                  )}
                 </label>
               ))}
 
