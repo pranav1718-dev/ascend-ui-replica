@@ -8,6 +8,7 @@ import { ScreenHeader } from "@/components/nav/ScreenHeader";
 import { SheetDialog } from "@/components/common/SheetDialog";
 import { iconFor } from "@/lib/icon-map";
 import {
+  localDay,
   todayISO,
   useStudySessions,
   useStudySubjects,
@@ -408,7 +409,9 @@ function StudyPage() {
               const day = v.date || selectedDate;
               const started = v.time
                 ? new Date(`${day}T${v.time}:00`).toISOString()
-                : localDay(day).toISOString();
+                : day === todayISO()
+                  ? new Date().toISOString()
+                  : localDay(day).toISOString();
               setSelectedDate(day);
               await createSession({
                 subject,
