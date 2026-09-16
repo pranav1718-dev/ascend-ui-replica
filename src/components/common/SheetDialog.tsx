@@ -7,9 +7,11 @@ export interface SheetField {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "time";
+  type?: "text" | "number" | "date" | "time" | "select";
   required?: boolean;
   defaultValue?: string;
+  /** Options for `type: "select"`. */
+  options?: { value: string; label: string }[];
 }
 
 /**
