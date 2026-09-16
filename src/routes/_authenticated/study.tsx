@@ -123,8 +123,29 @@ function StudyPage() {
 
           {tab === "Plan" && (
             <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value || todayISO())}
+                  aria-label="Selected day"
+                  className="h-10 flex-1 rounded-full bg-white border border-black/[0.04] px-4 text-[13px] font-semibold text-slate-700 shadow-sm outline-none focus:border-[#1976D2]/40"
+                />
+                {selectedDate !== todayISO() && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDate(todayISO())}
+                    className="h-10 rounded-full bg-[#0D47A1]/[0.06] text-[#0D47A1] text-[12.5px] font-semibold px-4"
+                  >
+                    Today
+                  </button>
+                )}
+              </div>
+
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-2">Today's Study Plan</p>
+                <p className="text-[13px] font-semibold text-slate-500 mb-2">
+                  {selectedDate === todayISO() ? "Today's Study Plan" : "Study Plan"}
+                </p>
                 <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#E3F0FF] to-[#F5F9FF] p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.08)]">
                   <div className="relative z-10 max-w-[65%]">
                     {sessionsLoading ? (
