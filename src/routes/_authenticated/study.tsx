@@ -62,15 +62,15 @@ function StudyPage() {
     error: sessionsError,
     create: createSession,
     complete,
+    uncomplete,
   } = useStudySessions();
   const { completedToday, focusMinutesToday } = usePomodoro();
   const { settings } = useSettings();
 
-  /* today's sessions */
-  const today = todayISO();
+  /* sessions on the selected day (local dates, never UTC-shifted) */
   const todaysSessions = useMemo(
-    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === today),
-    [sessions, today],
+    () => sessions.filter((s) => todayISO(new Date(s.started_at)) === selectedDate),
+    [sessions, selectedDate],
   );
   const next = todaysSessions.find((s) => !s.completed) ?? null;
 
