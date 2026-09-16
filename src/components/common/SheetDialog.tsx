@@ -25,6 +25,7 @@ export function SheetDialog({
   fields,
   submitLabel = "Save",
   withIconPicker = false,
+  addAnotherLabel,
   onSubmit,
 }: {
   open: boolean;
@@ -33,6 +34,8 @@ export function SheetDialog({
   fields: SheetField[];
   submitLabel?: string;
   withIconPicker?: boolean;
+  /** When set, shows a secondary action that saves and keeps the sheet open. */
+  addAnotherLabel?: string;
   onSubmit: (values: Record<string, string>, icon: string) => Promise<void> | void;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
