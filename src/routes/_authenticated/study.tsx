@@ -239,9 +239,15 @@ function StudyPage() {
                           </p>
                         </div>
                         {s.completed ? (
-                          <div className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white">
+                          <button
+                            type="button"
+                            onClick={() => void uncomplete(s)}
+                            aria-label={`Mark ${s.subject} incomplete`}
+                            title="Mark incomplete"
+                            className="grid h-7 w-7 place-items-center rounded-full bg-[#1976D2] text-white active:scale-95 transition"
+                          >
                             <Check className="h-4 w-4" strokeWidth={3} />
-                          </div>
+                          </button>
                         ) : (
                           <button
                             onClick={() => start(s)}
