@@ -166,6 +166,9 @@ export function SheetDialog({
               )}
 
               {error && <p className="text-[12.5px] font-medium text-rose-500">{error}</p>}
+              {!error && saved && (
+                <p className="text-[12.5px] font-medium text-emerald-600">Saved — add another.</p>
+              )}
             </div>
 
             <button
@@ -175,6 +178,16 @@ export function SheetDialog({
             >
               {busy ? "Saving…" : submitLabel}
             </button>
+            {addAnotherLabel && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void run(true)}
+                className="mt-3 w-full h-12 rounded-full bg-[#0D47A1]/[0.06] text-[#0D47A1] text-[14px] font-semibold active:scale-[0.98] transition disabled:opacity-60"
+              >
+                {addAnotherLabel}
+              </button>
+            )}
           </motion.form>
         </div>
       )}
