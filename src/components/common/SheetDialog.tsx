@@ -42,31 +42,45 @@ export function SheetDialog({
   const [icon, setIcon] = useState(ICON_KEYS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const initial = () => Object.fromEntries(fields.map((f) => [f.name, f.defaultValue ?? ""]));
 
   useEffect(() => {
     if (open) {
-      setValues(Object.fromEntries(fields.map((f) => [f.name, f.defaultValue ?? ""])));
+      setValues(initial());
       setError(null);
+      setSaved(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function run(keepOpen: boolean) {
     const missing = fields.find((f) => f.required !== false && !values[f.name]?.trim());
     if (missing) {
       setError(`${missing.label} is required.`);
       return;
     }
     setBusy(true);
+    setError(null);
     try {
       await onSubmit(values, icon);
-      onClose();
+      if (keepOpen) {
+        setValues(initial());
+        setSaved(true);
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    await run(false);
   }
 
   return (
