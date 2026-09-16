@@ -49,7 +49,6 @@ function StudyPage() {
     if (typeof window !== "undefined") window.localStorage.setItem(DATE_KEY, selectedDate);
   }, [selectedDate]);
 
-
   const {
     subjects,
     loading: subjectsLoading,
