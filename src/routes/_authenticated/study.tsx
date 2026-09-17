@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, ChevronRight, Check, Timer } from "lucide-react";
+import { Plus, ChevronRight, Check, Timer, CalendarDays, ArrowRight } from "lucide-react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { ScreenHeader } from "@/components/nav/ScreenHeader";
@@ -15,7 +15,6 @@ import {
   usePomodoro,
   useSettings,
 } from "@/hooks/use-ascend";
-import studyIllustration from "@/assets/study-illustration.png";
 import type { StudySession } from "@/types/models";
 
 export const Route = createFileRoute("/_authenticated/study")({
@@ -32,6 +31,54 @@ const tabs = ["Plan", "Subjects", "Pomodoro"] as const;
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function bookLabel(value: string) {
+  const clean = value.trim().replace(/\s+/g, " ");
+  if (clean.length <= 19) return clean.toUpperCase();
+  const initials = clean
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 8);
+  return initials.length >= 2 ? initials.toUpperCase() : `${clean.slice(0, 16).trim()}…`.toUpperCase();
+}
+
+function DynamicBookStack({ labels }: { labels: string[] }) {
+  if (labels.length === 0) return null;
+
+  const books = labels.slice(0, 3);
+  const positions = [
+    "bottom-1 right-0 rotate-[3deg] bg-primary text-primary-foreground",
+    "bottom-[2.35rem] right-2 -rotate-[2deg] bg-card text-primary",
+    "bottom-[4.7rem] right-0 rotate-[4deg] bg-brand-blue text-primary-foreground",
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="pointer-events-none absolute bottom-3 right-3 h-[8.25rem] w-[8.75rem] sm:right-6 sm:w-[10rem]"
+      aria-label={`Study books: ${books.join(", ")}`}
+      role="img"
+    >
+      <div className="absolute bottom-0 right-1 h-3 w-[92%] rounded-full bg-primary/15 blur-md" />
+      {books.map((label, index) => (
+        <div
+          key={`${label}-${index}`}
+          className={`absolute flex h-10 w-[8.15rem] items-center overflow-hidden rounded-[7px] border border-primary/20 shadow-[0_8px_16px_rgba(13,71,161,0.18)] sm:w-[9.25rem] ${positions[index]}`}
+        >
+          <span className="h-full w-2.5 shrink-0 border-r border-primary/20 bg-primary/15" />
+          <span className="min-w-0 flex-1 px-1.5 text-center text-[8px] font-extrabold leading-tight tracking-normal">
+            {bookLabel(label)}
+          </span>
+          <span className="h-[72%] w-1.5 shrink-0 rounded-l-full border-l border-primary/20 bg-background/70" />
+        </div>
+      ))}
+    </motion.div>
+  );
 }
 
 const DATE_KEY = "ascend:study-date";
@@ -74,6 +121,23 @@ function StudyPage() {
   );
   const next = todaysSessions.find((s) => !s.completed) ?? null;
 
+  const bookLabels = useMemo(() => {
+    const preferred = active ?? next;
+    const candidates = [
+      preferred?.subject,
+      preferred?.topic,
+      ...todaysSessions.map((session) => session.subject),
+      ...subjects.map((subject) => subject.name),
+    ];
+    return candidates.reduce<string[]>((labels, candidate) => {
+      const value = candidate?.trim();
+      if (value && !labels.some((label) => label.toLocaleLowerCase() === value.toLocaleLowerCase())) {
+        labels.push(value);
+      }
+      return labels;
+    }, []);
+  }, [active, next, subjects, todaysSessions]);
+
   /* running session timer (client-side, persisted on complete) */
   const [active, setActive] = useState<StudySession | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -106,8 +170,20 @@ function StudyPage() {
   return (
     <PhoneFrame>
       <div className="relative flex-1 bg-[#F7F8FC] pb-28">
-        <div className="px-6 pt-4 space-y-5">
-          <ScreenHeader title="Study" />
+        <div className="mx-auto max-w-2xl space-y-6 px-5 pt-5 sm:px-8">
+          <ScreenHeader
+            title="Study"
+            right={
+              <button
+                type="button"
+                onClick={() => setTab("Plan")}
+                aria-label="Open study plan calendar"
+                className="grid h-10 w-10 place-items-center rounded-2xl text-primary transition active:scale-95"
+              >
+                <CalendarDays className="h-6 w-6" strokeWidth={2.2} />
+              </button>
+            }
+          />
 
           <div className="flex items-center gap-2 rounded-full bg-white p-1.5 border border-black/[0.04] shadow-sm">
             {tabs.map((t) => (
@@ -143,16 +219,25 @@ function StudyPage() {
               </div>
 
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-2">
-                  {selectedDate === todayISO() ? "Today's Study Plan" : "Study Plan"}
-                </p>
-                <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#E3F0FF] to-[#F5F9FF] p-5 border border-black/[0.03] shadow-[0_8px_30px_rgba(13,71,161,0.08)]">
-                  <div className="relative z-10 max-w-[65%]">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-[17px] font-bold text-slate-900 font-display">
+                    {selectedDate === todayISO() ? "Today's Study Plan" : "Study Plan"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setTab("Plan")}
+                    className="inline-flex h-10 items-center gap-1 text-[12.5px] font-semibold text-brand-blue"
+                  >
+                    See All <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="relative min-h-[14rem] overflow-hidden rounded-[24px] border border-primary/5 bg-gradient-to-br from-accent to-background p-5 shadow-[0_12px_36px_rgba(13,71,161,0.10)] sm:min-h-[15rem] sm:p-6">
+                  <div className="relative z-10 max-w-[62%] sm:max-w-[66%]">
                     {sessionsLoading ? (
                       <p className="text-[13px] text-slate-500">Loading your plan…</p>
                     ) : active ? (
                       <>
-                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                        <h3 className="text-[22px] font-extrabold leading-tight text-slate-900 font-display">
                           {active.subject}
                         </h3>
                         <p className="text-[13px] text-slate-500 mt-1 tabular-nums">
@@ -160,14 +245,14 @@ function StudyPage() {
                         </p>
                         <button
                           onClick={() => void finish()}
-                          className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+                          className="mt-5 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-md transition active:scale-95"
                         >
                           Complete Session
                         </button>
                       </>
                     ) : next ? (
                       <>
-                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                        <h3 className="text-[22px] font-extrabold leading-tight text-slate-900 font-display">
                           {next.subject}
                         </h3>
                         <p className="text-[13px] text-slate-500 mt-1">
@@ -176,14 +261,14 @@ function StudyPage() {
                         </p>
                         <button
                           onClick={() => start(next)}
-                          className="mt-4 rounded-full bg-[#0D47A1] text-white text-[13px] font-semibold px-5 py-2.5 shadow-md active:scale-95 transition"
+                          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-md transition active:scale-95"
                         >
-                          Start Session
+                          Start Session <ArrowRight className="h-4 w-4" />
                         </button>
                       </>
                     ) : (
                       <>
-                        <h3 className="text-[20px] font-extrabold text-slate-900 font-display">
+                        <h3 className="text-[22px] font-extrabold leading-tight text-slate-900 font-display">
                           No session planned
                         </h3>
                         <p className="text-[13px] text-slate-500 mt-1">
@@ -192,18 +277,58 @@ function StudyPage() {
                       </>
                     )}
                   </div>
-                  <img
-                    src={studyIllustration}
-                    alt="Student studying"
-                    className="pointer-events-none absolute -right-3 bottom-0 h-28 w-28 object-contain opacity-90"
-                  />
+                  <DynamicBookStack labels={bookLabels} />
                 </div>
               </div>
 
               <div>
-                <p className="text-[13px] font-semibold text-slate-500 mb-3">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-[17px] font-bold text-slate-900 font-display">Subjects</h2>
+                  <button
+                    type="button"
+                    onClick={() => setTab("Subjects")}
+                    className="inline-flex h-10 items-center gap-1 text-[12.5px] font-semibold text-brand-blue"
+                  >
+                    See All <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+                {subjectsLoading && <p className="text-[13px] text-slate-400">Loading subjects…</p>}
+                {subjectsError && <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>}
+                {!subjectsLoading && !subjectsError && subjects.length === 0 && (
+                  <p className="text-[13px] text-slate-400">No subjects yet — open Subjects and tap +.</p>
+                )}
+                <div className="space-y-3">
+                  {subjects.slice(0, 3).map((subject, index) => {
+                    const look = iconFor(subject.icon, "book");
+                    const Icon = look.icon;
+                    return (
+                      <motion.button
+                        key={subject.id}
+                        type="button"
+                        onClick={() => setTab("Subjects")}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="grid min-h-[5.25rem] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-[20px] border border-black/[0.03] bg-white p-4 text-left shadow-[0_6px_22px_rgba(15,23,42,0.05)]"
+                      >
+                        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${look.tint}`}>
+                          <Icon className={`h-6 w-6 ${look.fg}`} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[15px] font-semibold text-slate-900">{subject.name}</span>
+                          <span className="block text-[12px] text-slate-500">Progress {subject.progress ?? 0}%</span>
+                        </span>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-slate-500" />
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="mb-3 text-[17px] font-bold text-slate-900 font-display">
                   {selectedDate === todayISO() ? "Today's Sessions" : "Sessions"}
-                </p>
+                </h2>
                 {sessionsError && (
                   <p className="text-[13px] text-rose-500">Couldn't load sessions.</p>
                 )}
@@ -345,7 +470,8 @@ function StudyPage() {
 
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-6 z-10 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-[#1976D2] to-[#0D47A1] text-white shadow-[0_10px_30px_-6px_rgba(25,118,210,0.6)] active:scale-95 transition"
+          aria-label={tab === "Subjects" ? "Add subject" : "Add study session"}
+          className="fixed bottom-24 right-6 z-10 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-brand-blue to-primary text-primary-foreground shadow-[0_10px_30px_-6px_rgba(25,118,210,0.6)] transition active:scale-95 sm:right-[max(1.5rem,calc((100vw-42rem)/2))]"
         >
           <Plus className="h-6 w-6" strokeWidth={2.5} />
         </button>
