@@ -373,6 +373,7 @@ function StudyPage() {
                 label: "Subject",
                 type: "select",
                 required: false,
+                sticky: true,
                 placeholder: subjects.length ? "Choose a subject" : "No subjects yet",
                 options: [
                   ...subjects.map((s) => ({ value: s.name, label: s.name })),
@@ -384,6 +385,7 @@ function StudyPage() {
                 label: "Other subject",
                 placeholder: "Data Structures",
                 required: false,
+                sticky: true,
               },
               { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
               {
@@ -391,8 +393,9 @@ function StudyPage() {
                 label: "Date",
                 type: "date",
                 defaultValue: selectedDate,
+                sticky: true,
               },
-              { name: "time", label: "Start time", type: "time", required: false },
+              { name: "time", label: "Start time", type: "time", required: false, sticky: true },
               {
                 name: "duration_min",
                 label: "Planned minutes",
@@ -406,11 +409,18 @@ function StudyPage() {
               const subject = (picked || v.subject || "").trim();
               if (!subject) throw new Error("Pick a subject or type one.");
               const day = v.date || selectedDate;
+              // Sessions added for another day with no time would otherwise all land on
+              // midnight; nudge each one a minute later so they list in the order added.
+              const onThatDay = sessions.filter(
+                (s) => todayISO(new Date(s.started_at)) === day,
+              ).length;
+              const plain = localDay(day);
+              plain.setMinutes(plain.getMinutes() + onThatDay);
               const started = v.time
                 ? new Date(`${day}T${v.time}:00`).toISOString()
                 : day === todayISO()
                   ? new Date().toISOString()
-                  : localDay(day).toISOString();
+                  : plain.toISOString();
               setSelectedDate(day);
               await createSession({
                 subject,
