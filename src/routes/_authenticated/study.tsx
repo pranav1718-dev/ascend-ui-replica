@@ -373,6 +373,7 @@ function StudyPage() {
                 label: "Subject",
                 type: "select",
                 required: false,
+                sticky: true,
                 placeholder: subjects.length ? "Choose a subject" : "No subjects yet",
                 options: [
                   ...subjects.map((s) => ({ value: s.name, label: s.name })),

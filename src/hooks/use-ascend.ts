@@ -476,16 +476,22 @@ export function useStudySessions() {
       started_at?: string;
       completed?: boolean;
     }) =>
-      guard(`create:${input.subject}:${input.topic ?? ""}`, async () => {
-        const user_id = await db.userId();
-        const { data: row, error } = await db
-          .from("study_sessions")
-          .insert({ user_id, ...input } as never)
-          .select()
-          .single();
-        if (error) throw error;
-        setData((prev) => [row as StudySession, ...(prev ?? [])]);
-        return row as StudySession;
+      guard(
+        `create:${input.subject}:${input.topic ?? ""}:${input.started_at ?? ""}`,
+        async () => {
+          const user_id = await db.userId();
+          const { data: row, error } = await db
+            .from("study_sessions")
+            .insert({ user_id, ...input } as never)
+            .select()
+            .single();
+          if (error) throw error;
+          setData((prev) => [row as StudySession, ...(prev ?? [])]);
+          return row as StudySession;
+        },
+      ).then((row) => {
+        if (!row) throw new Error("That session is already being saved.");
+        return row;
       }),
     [guard, setData],
   );
