@@ -12,6 +12,8 @@ export interface SheetField {
   defaultValue?: string;
   /** Options for `type: "select"`. */
   options?: { value: string; label: string }[];
+  /** Keeps its value after "save and add another" instead of clearing. */
+  sticky?: boolean;
 }
 
 /**
@@ -66,7 +68,13 @@ export function SheetDialog({
     try {
       await onSubmit(values, icon);
       if (keepOpen) {
-        setValues(initial());
+        // Keep sticky fields (subject, date, time) so the next entry only needs
+        // the details that actually change.
+        setValues((prev) =>
+          Object.fromEntries(
+            fields.map((f) => [f.name, f.sticky ? (prev[f.name] ?? "") : (f.defaultValue ?? "")]),
+          ),
+        );
         setSaved(true);
       } else {
         onClose();
