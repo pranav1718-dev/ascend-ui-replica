@@ -380,22 +380,22 @@ function StudyPage() {
                   { value: "__other", label: "Other (type below)" },
                 ],
               },
-               {
-                 name: "subject",
-                 label: "Other subject",
-                 placeholder: "Data Structures",
-                 required: false,
-                 sticky: true,
-               },
-               { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
-               {
-                 name: "date",
-                 label: "Date",
-                 type: "date",
-                 defaultValue: selectedDate,
-                 sticky: true,
-               },
-               { name: "time", label: "Start time", type: "time", required: false, sticky: true },
+              {
+                name: "subject",
+                label: "Other subject",
+                placeholder: "Data Structures",
+                required: false,
+                sticky: true,
+              },
+              { name: "topic", label: "Topic", placeholder: "Linked lists", required: false },
+              {
+                name: "date",
+                label: "Date",
+                type: "date",
+                defaultValue: selectedDate,
+                sticky: true,
+              },
+              { name: "time", label: "Start time", type: "time", required: false, sticky: true },
               {
                 name: "duration_min",
                 label: "Planned minutes",
@@ -408,19 +408,19 @@ function StudyPage() {
               const picked = v.subject_id && v.subject_id !== "__other" ? v.subject_id : "";
               const subject = (picked || v.subject || "").trim();
               if (!subject) throw new Error("Pick a subject or type one.");
-               const day = v.date || selectedDate;
-               // Sessions added for another day with no time would otherwise all land on
-               // midnight; nudge each one a minute later so they list in the order added.
-               const onThatDay = sessions.filter(
-                 (s) => todayISO(new Date(s.started_at)) === day,
-               ).length;
-               const plain = localDay(day);
-               plain.setMinutes(plain.getMinutes() + onThatDay);
-               const started = v.time
-                 ? new Date(`${day}T${v.time}:00`).toISOString()
-                 : day === todayISO()
-                   ? new Date().toISOString()
-                   : plain.toISOString();
+              const day = v.date || selectedDate;
+              // Sessions added for another day with no time would otherwise all land on
+              // midnight; nudge each one a minute later so they list in the order added.
+              const onThatDay = sessions.filter(
+                (s) => todayISO(new Date(s.started_at)) === day,
+              ).length;
+              const plain = localDay(day);
+              plain.setMinutes(plain.getMinutes() + onThatDay);
+              const started = v.time
+                ? new Date(`${day}T${v.time}:00`).toISOString()
+                : day === todayISO()
+                  ? new Date().toISOString()
+                  : plain.toISOString();
               setSelectedDate(day);
               await createSession({
                 subject,
