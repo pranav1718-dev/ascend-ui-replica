@@ -379,6 +379,7 @@ function StudyPage() {
                           </p>
                           <p className="text-[12px] text-slate-500 truncate">
                             {fmtTime(s.started_at)}
+                            {s.topic ? ` · ${s.topic}` : ""}
                             {s.duration_min ? ` · ${s.duration_min} min` : ""}
                           </p>
                         </div>
@@ -567,6 +568,18 @@ function StudyPage() {
                   ? new Date().toISOString()
                   : plain.toISOString();
               setSelectedDate(day);
+              // A newly typed subject joins the user's subject list once, so it shows up
+              // in Subjects, the dropdown and the book stack without a second step.
+              if (
+                !picked &&
+                !subjects.some((s) => s.name.trim().toLowerCase() === subject.toLowerCase())
+              ) {
+                try {
+                  await createSubject(subject, "book");
+                } catch {
+                  /* the session still saves even if the subject entry fails */
+                }
+              }
               await createSession({
                 subject,
                 topic: v.topic?.trim() || undefined,

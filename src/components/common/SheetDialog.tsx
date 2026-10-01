@@ -108,7 +108,7 @@ export function SheetDialog({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative w-full max-w-[420px] rounded-t-[28px] bg-white p-6 pb-8 shadow-[0_-8px_40px_rgba(15,23,42,0.18)]"
+            className="relative w-full max-w-[420px] max-h-[88dvh] overflow-y-auto overscroll-contain rounded-t-[28px] bg-white p-6 pb-8 shadow-[0_-8px_40px_rgba(15,23,42,0.18)]"
             style={{ paddingBottom: "max(env(safe-area-inset-bottom), 24px)" }}
           >
             <div className="flex items-center justify-between">
