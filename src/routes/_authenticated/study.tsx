@@ -22,6 +22,10 @@ export const Route = createFileRoute("/_authenticated/study")({
     meta: [
       { title: "Study — ASCEND" },
       { name: "description", content: "Study plan, subjects and focus sessions." },
+      { property: "og:title", content: "Study — ASCEND" },
+      { property: "og:description", content: "Study plan, subjects and focus sessions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: StudyPage,
