@@ -121,6 +121,11 @@ function StudyPage() {
   );
   const next = todaysSessions.find((s) => !s.completed) ?? null;
 
+  /* running session timer (client-side, persisted on complete) */
+  const [active, setActive] = useState<StudySession | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const tick = useRef<number | null>(null);
+
   const bookLabels = useMemo(() => {
     const preferred = active ?? next;
     const candidates = [
@@ -137,11 +142,6 @@ function StudyPage() {
       return labels;
     }, []);
   }, [active, next, subjects, todaysSessions]);
-
-  /* running session timer (client-side, persisted on complete) */
-  const [active, setActive] = useState<StudySession | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-  const tick = useRef<number | null>(null);
 
   useEffect(() => {
     if (!active) return;
