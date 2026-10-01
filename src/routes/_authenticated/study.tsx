@@ -22,6 +22,10 @@ export const Route = createFileRoute("/_authenticated/study")({
     meta: [
       { title: "Study — ASCEND" },
       { name: "description", content: "Study plan, subjects and focus sessions." },
+      { property: "og:title", content: "Study — ASCEND" },
+      { property: "og:description", content: "Study plan, subjects and focus sessions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: StudyPage,
@@ -42,7 +46,9 @@ function bookLabel(value: string) {
     .map((word) => word[0])
     .join("")
     .slice(0, 8);
-  return initials.length >= 2 ? initials.toUpperCase() : `${clean.slice(0, 16).trim()}…`.toUpperCase();
+  return initials.length >= 2
+    ? initials.toUpperCase()
+    : `${clean.slice(0, 16).trim()}…`.toUpperCase();
 }
 
 function DynamicBookStack({ labels }: { labels: string[] }) {
@@ -121,6 +127,11 @@ function StudyPage() {
   );
   const next = todaysSessions.find((s) => !s.completed) ?? null;
 
+  /* running session timer (client-side, persisted on complete) */
+  const [active, setActive] = useState<StudySession | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const tick = useRef<number | null>(null);
+
   const bookLabels = useMemo(() => {
     const preferred = active ?? next;
     const candidates = [
@@ -131,17 +142,15 @@ function StudyPage() {
     ];
     return candidates.reduce<string[]>((labels, candidate) => {
       const value = candidate?.trim();
-      if (value && !labels.some((label) => label.toLocaleLowerCase() === value.toLocaleLowerCase())) {
+      if (
+        value &&
+        !labels.some((label) => label.toLocaleLowerCase() === value.toLocaleLowerCase())
+      ) {
         labels.push(value);
       }
       return labels;
     }, []);
   }, [active, next, subjects, todaysSessions]);
-
-  /* running session timer (client-side, persisted on complete) */
-  const [active, setActive] = useState<StudySession | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-  const tick = useRef<number | null>(null);
 
   useEffect(() => {
     if (!active) return;
@@ -293,9 +302,13 @@ function StudyPage() {
                   </button>
                 </div>
                 {subjectsLoading && <p className="text-[13px] text-slate-400">Loading subjects…</p>}
-                {subjectsError && <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>}
+                {subjectsError && (
+                  <p className="text-[13px] text-rose-500">Couldn't load subjects.</p>
+                )}
                 {!subjectsLoading && !subjectsError && subjects.length === 0 && (
-                  <p className="text-[13px] text-slate-400">No subjects yet — open Subjects and tap +.</p>
+                  <p className="text-[13px] text-slate-400">
+                    No subjects yet — open Subjects and tap +.
+                  </p>
                 )}
                 <div className="space-y-3">
                   {subjects.slice(0, 3).map((subject, index) => {
@@ -311,12 +324,18 @@ function StudyPage() {
                         transition={{ delay: index * 0.05 }}
                         className="grid min-h-[5.25rem] w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-[20px] border border-black/[0.03] bg-white p-4 text-left shadow-[0_6px_22px_rgba(15,23,42,0.05)]"
                       >
-                        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${look.tint}`}>
+                        <span
+                          className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${look.tint}`}
+                        >
                           <Icon className={`h-6 w-6 ${look.fg}`} />
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-[15px] font-semibold text-slate-900">{subject.name}</span>
-                          <span className="block text-[12px] text-slate-500">Progress {subject.progress ?? 0}%</span>
+                          <span className="block truncate text-[15px] font-semibold text-slate-900">
+                            {subject.name}
+                          </span>
+                          <span className="block text-[12px] text-slate-500">
+                            Progress {subject.progress ?? 0}%
+                          </span>
                         </span>
                         <ChevronRight className="h-5 w-5 shrink-0 text-slate-500" />
                       </motion.button>
