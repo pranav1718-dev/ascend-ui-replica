@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { PhoneFrame } from "@/components/auth/PhoneFrame";
+import { supabase } from "@/integrations/supabase/client";
 import splashAsset from "@/assets/splash.jpeg";
 
 export const Route = createFileRoute("/")({
@@ -19,8 +20,22 @@ export const Route = createFileRoute("/")({
 function Splash() {
   const navigate = useNavigate();
   useEffect(() => {
-    const t = setTimeout(() => navigate({ to: "/onboarding" }), 2200);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    const t = setTimeout(() => {
+      // Signed-in users skip onboarding/login and land straight on Home.
+      if (!supabase) {
+        if (!cancelled) navigate({ to: "/onboarding" });
+        return;
+      }
+      void supabase.auth.getSession().then(({ data }) => {
+        if (cancelled) return;
+        navigate({ to: data.session ? "/home" : "/onboarding" });
+      });
+    }, 2200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [navigate]);
 
   return (
